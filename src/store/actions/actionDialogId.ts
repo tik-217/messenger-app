@@ -1,0 +1,1 @@
+export const DIALOG_ID = "DIALOG_ID";
