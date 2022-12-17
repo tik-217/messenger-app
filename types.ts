@@ -31,14 +31,24 @@ interface StateDialogId {
   dialogId: number;
 }
 
+interface StateCompanionData {
+  companionData: Array<UserResponse>;
+}
+
 interface StateCurrentUserId {
   currentUserId: number;
 }
 
 export interface ChatReduxState {
   dialogId: StateDialogId;
+  companionData: StateCompanionData;
 }
 
 export interface ChatDialogReduxState {
   currentUserId: StateCurrentUserId;
+  companionData: StateCompanionData;
+}
+
+export interface SearchUserObject {
+  searchUserName?: string;
 }

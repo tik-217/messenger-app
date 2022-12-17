@@ -8,9 +8,20 @@ import Chat from "../models/chat/chat.mjs";
 router
   .route("")
   .post(async (req, res) => {
-    const initChat = await Chat.create(req.query);
+    const getUserIds = await Chat.findAll({
+      where: {
+        user_ids: req.query.user_ids
+      },
+      raw: true
+    });
 
-    res.json(initChat.toJSON().id);
+    if (getUserIds.length === 0) {
+      const initChat = await Chat.create(req.query);
+      res.json(initChat.toJSON().id);
+    } else {
+      res.json(getUserIds[0].id);
+    }
+
     res.end();
   })
   .get(async (req, res) => {

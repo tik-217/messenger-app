@@ -9,7 +9,10 @@ Chat.init({
     autoIncrement: true,
     primaryKey: true,
   },
-  user_ids: DataTypes.ARRAY(DataTypes.INTEGER),
+  user_ids: {
+    type: DataTypes.ARRAY(DataTypes.INTEGER),
+    allowNull: false,
+  }
 },
   {
     sequelize,

@@ -19,15 +19,16 @@ function Search({
   sendDialogId,
   sendCurrentUser,
   currentUserId,
+  companionData,
 }: {
   sendDialogId: (dialogIdValue: number) => void;
   sendCurrentUser: (currentUserId: number) => void;
   currentUserId: number;
+  companionData: Array<UserResponse>;
 }) {
-  const [searchText, setSerchText] = useState<string>("");
-  const [searchResponse, setSearchResponse] = useState<Array<UserResponse>>([]);
+  const [searchText, setSearchText] = useState<string>();
   const [openDialog, setOpenDialog] = useState<boolean>(false);
-  const [companionId, setCompanionId] = useState<number>(0);
+  const [searchResponse, setSearchResponse] = useState<Array<UserResponse>>([]);
 
   const { user, isAuthenticated } = useAuth0();
 
@@ -40,8 +41,8 @@ function Search({
     the currently registered user.
   */
   useEffect(() => {
-    const searchUser = async () => {
-      if (searchText === "") return;
+    const getCurrentUser = async () => {
+      if (searchText === undefined) return;
 
       await axios({
         method: "get",
@@ -60,9 +61,8 @@ function Search({
 
         setSearchResponse(filteredDeleteCurrentUser);
       });
-      console.log("Отправлен GET запрос");
     };
-    searchUser();
+    getCurrentUser();
   }, [searchText]);
 
   /* 
@@ -80,7 +80,7 @@ function Search({
         method: "post",
         url: "http://localhost:3001/chat",
         params: {
-          user_ids: [currentUserId, companionId]
+          user_ids: [currentUserId, companionData && companionData[0].id],
         },
       }).then((res) => res.data);
 
@@ -93,28 +93,25 @@ function Search({
     if (!isAuthenticated) {
       alert("Please, register before searching");
     } else {
-      setSerchText(e.target.value);
+      setSearchText(e.target.value);
     }
   }
 
   function getCompanionId(e: React.MouseEvent<HTMLDivElement>) {
-    const divCompanion = e.target as HTMLAnchorElement | HTMLImageElement;
-    if (divCompanion.tagName === "IMG" || divCompanion.tagName === "A") {
-      const userId = (divCompanion.parentNode as HTMLDivElement).attributes[1]
-        .value;
-      setCompanionId(+userId);
-    }
+    e.preventDefault();
+
+    setSearchText("");
     setOpenDialog(true);
   }
 
   return (
-    <div>
-      <div id="myDropdown" className="dropdown-content">
+    <>
+      <div className="dropdown-content">
         <input
-          className="form-control"
+          className=" form-control"
           id="myInput"
           placeholder="Search by email or name"
-          value={searchText}
+          value={searchText === undefined ? "" : searchText}
           onChange={(e) => registrationWarning(e)}
         />
         {searchResponse &&
@@ -126,18 +123,19 @@ function Search({
                 onClick={(e) => getCompanionId(e)}
               >
                 <img src={el.picture} alt="" />
-                <a href="#">{el.email}</a>
+                <a href="/">{el.email}</a>
               </div>
             </React.Fragment>
           ))}
       </div>
-    </div>
+    </>
   );
 }
 
 function mapStateToProps(state) {
   return {
     currentUserId: state.currentUserId.currentUserId,
+    companionData: state.companionData.companionData,
   };
 }
 

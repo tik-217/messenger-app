@@ -1,10 +1,15 @@
 body {
-  background-color: #f4f7f6;
   margin-top: 20px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   height: 100vh;
+  overflow-y: hidden;
+}
+
+.loading img{
+  display: table;
+  margin: 0 auto;
 }
 
 .card {
@@ -34,7 +39,7 @@ body {
 
 /* Dropdown Button */
 .dropbtn {
-  background-color: #04AA6D;
+  background-color: #04aa6d;
   color: white;
   padding: 16px;
   font-size: 16px;
@@ -72,11 +77,7 @@ body {
 
 /* Dropdown Content (Hidden by Default) */
 .dropdown-content {
-  position: absolute;
-  background-color: #f6f6f6;
   min-width: 190px;
-  border: 1px solid #ddd;
-  z-index: 1;
   max-width: 190px;
 }
 
@@ -103,10 +104,10 @@ body {
 
 /* Change color of dropdown links on hover */
 .dropdown-content a:hover {
-  background-color: #f1f1f1
+  background-color: #f1f1f1;
 }
 
-.registrationWarning{
+.registrationWarning {
   margin-top: 20px;
 }
 
@@ -134,6 +135,7 @@ body {
 
 .people-list .chat-list li .name {
   font-size: 15px;
+  overflow-wrap: anywhere;
 }
 
 .people-list .chat-list img {
@@ -156,6 +158,34 @@ body {
   font-size: 13px;
 }
 
+.chat {
+  /* height: 90vh; */
+}
+
+.chat button {
+  border: 2px solid #e47296;
+  background: none;
+  padding: 8px 25px;
+  border-radius: 20px;
+  margin: 0 0 20px;
+  transition: 0.2s all ease-in-out;
+}
+
+.chat button:hover {
+  background-color: #e47296;
+  color: white;
+}
+
+.chat .chat-initial {
+  text-align: center;
+  margin-top: 40px;
+  height: 100%;
+}
+
+.chat .chat-initial h3{
+  margin: 30px 0 40px;
+}
+
 .chat .chat-header {
   padding: 15px 20px;
   border-bottom: 2px solid #f4f7f6;
@@ -175,6 +205,9 @@ body {
 .chat .chat-history {
   padding: 20px;
   border-bottom: 2px solid #fff;
+  height: 60vh;
+  overflow: hidden;
+  overflow-y: auto;
 }
 
 .chat .chat-history ul {

@@ -1,96 +1,114 @@
 // react
-import React, { useState, useEffect } from "react";
-
-// axios
-import axios from "axios";
+import React, { useState, useEffect, useRef } from "react";
 
 // types
-import { ChatContent, ChatDialogReduxState } from "../../../types";
+import { ChatContent, ChatDialogReduxState, UserResponse } from "../../../types";
 
 // redux
 import { connect } from "react-redux";
 
+// utils
+import { changeTimeView } from "../../utils/utils";
+
+// services
+import { sendingMessage } from "../../services/services";
+
+// auth
+import { useAuth0 } from "@auth0/auth0-react";
+
+// axios
+import axios from "axios";
+
 function ChatDialog({
   dialogId,
   currentUserId,
-  getChatContent
+  companionData
 }: {
   dialogId: number;
     currentUserId: number;
-    getChatContent: (chat: Array<ChatContent>) => void;
+  companionData: Array<UserResponse>
 }) {
   const [inputMessage, setInputMessage] = useState("");
   const [confirmRequest, setConfirmRequest] = useState(false);
-  const [chatContent, setChatContent] = useState<Array<ChatContent>>([]);
+  const [chatHistory, setChatHistory] = useState<Array<ChatContent>>([]);
+
+  const { user } = useAuth0();
+
+  const messgagesList = useRef<null | HTMLUListElement>(null);
+
+  const scrollToBottom = () => {
+    messgagesList.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, []);
 
   function cancelingDefaultAction(e: React.KeyboardEvent<HTMLFormElement>) {
     e.preventDefault();
+
+    // clear input after sending
+    const input = e.target as HTMLInputElement;
+    input.value = "";
+
     setConfirmRequest(true);
   }
 
   useEffect(() => {
-    if (chatContent.length !== 0) {
-      getChatContent(chatContent);
-    }
-  }, [chatContent]);
+    scrollToBottom();
+
+    sendingMessage(
+      confirmRequest,
+      setChatHistory,
+      setConfirmRequest,
+      inputMessage,
+      currentUserId,
+      dialogId
+    );
+  }, [confirmRequest]);
 
   useEffect(() => {
-    const sendingMessage = async () => {
-      if (confirmRequest === false) return;
+    const getDialogData = async () => {
+      if (dialogId === undefined || dialogId === null) return;
 
-      // api для отправки сообщения содержащее id отправителя и chatId беседы
-      await axios({
-        method: "post",
-        url: "http://localhost:3001/chat-content",
-        params: {
-          user_id: currentUserId,
-          chat_id: dialogId,
-          content: inputMessage,
-        },
-      })
-        .then((res) => setChatContent(res.data[0]))
-        .catch((err) => console.log(err));
-
-      setConfirmRequest(false);
+      await axios("http://localhost:3001/chat-content/getChatContent").then(
+        (res) => setChatHistory(res.data)
+      );
     };
-    sendingMessage();
-  }, [confirmRequest]);
+    getDialogData();
+  }, [dialogId]);
 
   return (
     <>
       <div className="chat-history">
-        <ul className="m-b-0">
-          {/* <li className="clearfix">
-            <div className="message-data text-right">
-              <span className="message-data-time">10:10 AM, Today</span>
-              <img
-                src="https://bootdey.com/img/Content/avatar/avatar7.png"
-                alt="avatar"
-              />
-            </div>
-            <div className="message other-message float-right">
-              Hi Aiden, how are you? How is the project coming along?
-            </div>
-          </li>
-          <li className="clearfix">
-            <div className="message-data">
-              <span className="message-data-time">10:12 AM, Today</span>
-            </div>
-            <div className="message my-message">Are we meeting today?</div>
-          </li>
-          <li className="clearfix">
-            <div className="message-data">
-              <span className="message-data-time">10:15 AM, Today</span>
-            </div>
-            <div className="message my-message">
-              Project has been already finished and I have results to show you.
-            </div>
-          </li> */}
-          <li>
-            <div className="message other-message float-right">
-              
-            </div>
-          </li>
+        <ul className="m-b-0" ref={messgagesList}>
+          {chatHistory &&
+            chatHistory.map((el: ChatContent) => (
+              <React.Fragment key={el.id}>
+                {el.user_id !== companionData[0].id ? (
+                  <li className="clearfix">
+                    <div className="message-data text-right">
+                      <span className="message-data-time">
+                        {changeTimeView(el.createdAt)}
+                      </span>
+                      <img src={user?.picture} alt="avatar" />
+                    </div>
+                    <div className="message other-message float-right">
+                      {el.content}
+                    </div>
+                  </li>
+                ) : (
+                  <li className="clearfix">
+                    <div className="message-data">
+                      <span className="message-data-time">
+                        {changeTimeView(el.createdAt)}
+                      </span>
+                    </div>
+                    <div className="message my-message">{el.content}</div>
+                  </li>
+                )}
+              </React.Fragment>
+            ))}
         </ul>
       </div>
       <div className="chat-message clearfix">
@@ -118,6 +136,7 @@ function ChatDialog({
 function mapStateToProps(state: ChatDialogReduxState) {
   return {
     currentUserId: state.currentUserId.currentUserId,
+    companionData: state.companionData.companionData,
   };
 }
 

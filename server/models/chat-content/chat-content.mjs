@@ -9,9 +9,18 @@ ChatContent.init({
     autoIncrement: true,
     primaryKey: true,
   },
-  user_id: DataTypes.INTEGER,
-  chat_id: DataTypes.INTEGER,
-  content: DataTypes.STRING,
+  user_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },
+  chat_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },
+  content: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
 },
   {
     sequelize,

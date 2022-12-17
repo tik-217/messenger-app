@@ -8,14 +8,9 @@ import ChatContent from "../models/chat-content/chat-content.mjs";
 router
   .route("")
   .post(async (req, res) => {
-    console.log(req.query);
     await ChatContent.create(req.query);
 
-    res.json(await ChatContent.findAll({
-      where: {
-        chat_id: req.query.chat_id
-      }
-    }));
+    res.json(await ChatContent.findAll());
     res.end();
   })
   .get(async (req, res) => {
@@ -38,7 +33,9 @@ router
   });
 
 router.get(("/getChatContent"), async (req, res) => {
-  res.json(await ChatContent.findAll());
+  res.json(await ChatContent.findAll({
+    order: [['updatedAt', 'ASC']]
+  }));
   res.end();
 })
 
