@@ -1,11 +1,31 @@
-import React from "react";
+// react
+import React, { useContext } from "react";
+
+// components
 import Chat from "./Chat/Chat.tsx";
 import Sidebar from "./Sidebar/Sidebar";
+
+// auth
 import { useAuth0 } from "@auth0/auth0-react";
+
+// socket.io
+import { SocketContext } from "../services/context-socket-io.js";
+
+// images
 import loaderImage from "../assets/icons/Spinner-1s-200px.gif";
 
 export default function App() {
   const { isLoading } = useAuth0();
+
+  const socket = useContext(SocketContext);
+
+  socket.on("connect", () => {
+    console.log(socket);
+  });
+
+  socket.on("connect_error", (err) => {
+    console.log(`connect_error due to ${err.message}`);
+  });
 
   if (isLoading) {
     setTimeout(() => {

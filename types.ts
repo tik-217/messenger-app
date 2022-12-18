@@ -25,6 +25,7 @@ export interface DialogIdType {
   type: string;
   dialogId?: number;
   currentUserId?: number;
+  companionData?: Array<UserResponse>;
 }
 
 interface StateDialogId {
@@ -47,8 +48,4 @@ export interface ChatReduxState {
 export interface ChatDialogReduxState {
   currentUserId: StateCurrentUserId;
   companionData: StateCompanionData;
-}
-
-export interface SearchUserObject {
-  searchUserName?: string;
 }
