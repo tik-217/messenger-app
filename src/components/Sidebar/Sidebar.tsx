@@ -5,65 +5,58 @@ import { Dispatch, useEffect, useState } from "react";
 import Search from "../Search/Search";
 
 // types
-import {
-  ChatDialogReduxState,
-  DialogIdType,
-  UserResponse,
-} from "../../../types";
-
-// auth
-import { useAuth0 } from "@auth0/auth0-react";
+import { ChatDialogReduxState, DialogIdType, UserResponse } from "../../types";
 
 // api
-import { createTime, searchUser } from "../../services/services";
+import { createTime } from "../../services/services";
 
 // redux
 import { connect } from "react-redux";
 import creatorDialogId from "../../store/creators/creatorDialogId";
-import creatorCompanionId from "../../store/creators/creatorCompanionId";
-import creatorCurrentUserId from "../../store/creators/creatorCurrentUserId";
 
 // socket
 import { socket } from "../../services/context-socket-io";
+import creatorIdCurrentCompanion from "../../store/creators/creatorIdCurrentCompanion";
 
 function Sidebar({
-  currentUserId,
-  companionData,
+  currentUser,
+  usersList,
+  idCurrentCompanion,
   sendDialogId,
-  sendCurrentUser,
-  sendCompanion,
+  sendIdCurrentCompanion,
 }: {
-  currentUserId: number;
-  companionData: Array<UserResponse>;
+  currentUser: UserResponse;
+  usersList: Array<UserResponse>;
+  idCurrentCompanion: string;
   sendDialogId: (dialogIdValue: number) => void;
-  sendCurrentUser: (currentUserId: number) => void;
-  sendCompanion: (companionId: Array<UserResponse>) => void;
+  sendIdCurrentCompanion: (idCurrentCompanion: number) => void;
 }) {
   const [openDialog, setOpenDialog] = useState(false);
 
-  const { user, isAuthenticated } = useAuth0();
+  // useEffect(() => {
+  //   const lastOpenDialog = localStorage.getItem("lastОpenDialog");
 
-  useEffect(() => {
-    user && searchUser(isAuthenticated, user, sendCompanion);
-
-    const userName = {
-      searchUserName: user && user.email,
-    };
-
-    socket.emit("findUsers", userName);
-  }, []);
+  //   setSearchResponse(lastOpenDialog && JSON.parse(lastOpenDialog))
+  // }, [])
 
   useEffect(() => {
     if (openDialog === false) return;
 
     const userIds = {
-      user_ids: [currentUserId, companionData && companionData[0].id],
+      user_ids: [currentUser.id, usersList && usersList[0].id],
     };
 
     socket.emit("createChat", userIds);
+    // eslint-disable-next-line
   }, [openDialog]);
 
-  function chooseCompanion() {
+  function chooseCompanion(e: React.MouseEvent<HTMLLIElement>) {
+    const companionDiv = e.nativeEvent.composedPath();
+    const getLiElement: object = companionDiv.filter(el => (el as HTMLElement).tagName === "LI");
+    const companionId = getLiElement[0].dataset.userId;
+
+    companionId && sendIdCurrentCompanion(companionId);
+
     setOpenDialog(true);
   }
 
@@ -71,19 +64,14 @@ function Sidebar({
     sendDialogId(socket);
   });
 
-  socket.on("respFoundUsers", (socket) => {
-    socket.forEach((el: UserResponse) => {
-      if (el.email === (user && user.email)) {
-        sendCurrentUser(el.id);
-      }
-    });
-  });
-
   return (
     <div id="plist" className="people-list">
       <div className="input-group">
-        <div className="input-group-prepend">
-          <span className="input-group-text" id="basic-addon1">
+        <div className="input-group-prepend align-items-start p-1">
+          <span
+            className="input-group-text align-items-start"
+            id="basic-addon1"
+          >
             <i className="fa fa-search"></i>
           </span>
         </div>
@@ -92,19 +80,18 @@ function Sidebar({
         </div>
       </div>
       <ul className="list-unstyled chat-list mt-2 mb-0">
-        {companionData &&
-          companionData.map((el: UserResponse) => (
+        {usersList &&
+          usersList.map((el: UserResponse) => (
             <li
-              className="clearfix d-flex"
+              className="clearfix d-flex align-items-center"
               key={el.id}
-              onClick={() => chooseCompanion()}
+              data-user-id={el.id}
+              onClick={(e) => chooseCompanion(e)}
             >
               <img src={el.picture} alt="avatar" />
               <div className="about">
                 <div className="name">{el.name}</div>
-                <div className="status">
-                  {createTime(companionData[0].session)}
-                </div>
+                <div className="status">{createTime(usersList[0].session)}</div>
               </div>
             </li>
           ))}
@@ -117,17 +104,16 @@ function mapDispatchToProps(dispatch: Dispatch<DialogIdType>) {
   return {
     sendDialogId: (dialogIdValue: number) =>
       dispatch(creatorDialogId(dialogIdValue)),
-    sendCurrentUser: (currentUserId: number) =>
-      dispatch(creatorCurrentUserId(currentUserId)),
-    sendCompanion: (companionData: Array<UserResponse>) =>
-      dispatch(creatorCompanionId(companionData)),
+    sendIdCurrentCompanion: (idCurrentCompanion: number) =>
+      dispatch(creatorIdCurrentCompanion(idCurrentCompanion)),
   };
 }
 
 function mapStateToProps(state: ChatDialogReduxState) {
   return {
-    currentUserId: state.currentUserId.currentUserId,
-    companionData: state.companionData.companionData,
+    currentUser: state.currentUser.currentUser,
+    usersList: state.usersList.usersList,
+    idCurrentCompanion: state.idCurrentCompanion.idCurrentCompanion,
   };
 }
 

@@ -1,5 +1,5 @@
 // react
-import { useEffect } from "react";
+import { Dispatch, useEffect, useState } from "react";
 
 // auth
 import { useAuth0 } from "@auth0/auth0-react";
@@ -11,19 +11,21 @@ import ChatDialog from "../ChatDialog/ChatDialog";
 import { connect } from "react-redux";
 
 // types
-import { ChatReduxState, UserResponse } from "../../../types";
+import { ChatReduxState, DialogIdType, UserResponse } from "../../types";
 import { socket } from "../../services/context-socket-io";
 import { createTime } from "../../services/services";
+import creatorIdCurrentCompanion from "../../store/creators/creatorIdCurrentCompanion";
 
 function Chat({
   dialogId,
-  companionData,
-  currentUserId
+  currentUser,
+  idCurrentCompanion,
 }: {
   dialogId: number;
-    companionData: Array<UserResponse>;
-  currentUserId: number
-}) {
+  currentUser: UserResponse;
+  idCurrentCompanion: string;
+  }) {
+  const [companionData, setCompanionData] = useState<Array<UserResponse>>([]);
   const { loginWithRedirect, logout, user, isAuthenticated } = useAuth0();
 
   /*
@@ -36,38 +38,49 @@ function Chat({
 
     const date = +new Date();
 
-    socket.emit("createUsers", user && { ...user, session: date});
+    socket.emit("createUsers", user && { ...user, session: date });
 
     socket.on("respCreatedUser", (socket) => console.log(socket));
+    // eslint-disable-next-line
   }, []);
 
   useEffect(() => {
-    if (!currentUserId) return;
+    if (!currentUser) return;
 
     const date = +new Date();
 
     const sessionDate = {
-      session: date
-    }
-    
+      session: date,
+    };
+
     const sessionNull = {
-      session: null
-    }
+      session: null,
+    };
 
     window.addEventListener("focus", () => {
       console.log("online");
-      socket.emit("updateUsers", currentUserId, sessionNull);
+      socket.emit("updateUsers", currentUser.id, sessionNull);
     });
 
     window.addEventListener("blur", () => {
       console.log("offline");
-      socket.emit("updateUsers", currentUserId, sessionDate);
+      socket.emit("updateUsers", currentUser.id, sessionDate);
     });
-  }, [currentUserId]);
-  
+  }, [currentUser]);
+
   socket.on("updateUsers", (socket) => {
     console.log(socket);
-  })
+  });
+
+  useEffect(() => {
+    if (!idCurrentCompanion) return;
+
+    socket.emit("findUsers", Number(idCurrentCompanion));
+
+    socket.on("respFoundUsers", (foundUsers) => {
+      setCompanionData(foundUsers);
+    });
+  }, [idCurrentCompanion]);
 
   return (
     <>
@@ -101,14 +114,14 @@ function Chat({
             <div className="chat-header clearfix">
               <div className="row">
                 <div className="col-lg-6">
-                  <img src={companionData[0].picture} alt="avatar" />
+                  <img src={companionData.length !== 0 ? companionData[0].picture : "/"} alt="avatar" />
                   <div className="chat-about">
-                    <h6 className="m-b-0">{companionData[0].name}</h6>
-                    <small>{createTime(companionData[0].session)}</small>
+                    <h6 className="m-b-0">{companionData.length !== 0 && companionData[0].name}</h6>
+                    <small>{createTime(companionData.length !== 0 ? companionData[0].session : "")}</small>
                   </div>
                 </div>
                 <div className="col-lg-6 hidden-sm text-right">
-                  <a href="/" className="btn btn-outline-secondary">
+                  {/* <a href="/" className="btn btn-outline-secondary">
                     <i className="fa fa-camera"></i>
                   </a>
                   <a href="/" className="btn btn-outline-primary">
@@ -119,7 +132,7 @@ function Chat({
                   </a>
                   <a href="/" className="btn btn-outline-warning">
                     <i className="fa fa-question"></i>
-                  </a>
+                  </a> */}
                   {isAuthenticated ? (
                     <button
                       onClick={() =>
@@ -145,9 +158,16 @@ function Chat({
 function mapStateToProps(state: ChatReduxState) {
   return {
     dialogId: state.dialogId.dialogId,
-    companionData: state.companionData.companionData,
-    currentUserId: state.currentUserId.currentUserId
+    currentUser: state.currentUser.currentUser,
+    idCurrentCompanion: state.idCurrentCompanion.idCurrentCompanion,
   };
 }
 
-export default connect(mapStateToProps)(Chat);
+function mapDispatchToProps(dispatch: Dispatch<DialogIdType>) {
+  return {
+    sendIdCurrentCompanion: (idCurrentCompanion: number) =>
+      dispatch(creatorIdCurrentCompanion(idCurrentCompanion)),
+  };
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(Chat);

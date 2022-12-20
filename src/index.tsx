@@ -6,18 +6,18 @@ import { Provider } from "react-redux";
 import './index.css';
 
 // components
-import App from './components/App.js';
+import App from './components/App';
 
 // auth
 import { Auth0Provider } from "@auth0/auth0-react";
 
 // redux
-import { store } from "./store/store.ts";
+import { store } from "./store/store";
 
 // socket.io
 import { SocketContext, socket } from './services/context-socket-io';
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+const root = ReactDOM.createRoot(document.getElementById('root') as HTMLDivElement);
 root.render(
   <Provider store={store}>
     <SocketContext.Provider value={socket}>

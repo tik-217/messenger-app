@@ -1,13 +1,15 @@
 import { combineReducers } from 'redux';
 
 import reducerDialogId from "./reducerDialogId";
-import reducerCurrentUserId from "./reducerCurrentUserId";
-import reducerCompanionId from "./reducerCompanionId";
+import reducerCurrentUser from "./reducerCurrentUser";
+import reducerCompanionId from "./reducerUsersList";
+import reducerIdCurrentCompanion from './reducerIdCurrentCompanion';
 
 const rootReducer = combineReducers({
   dialogId: reducerDialogId,
-  currentUserId: reducerCurrentUserId,
-  companionData: reducerCompanionId,
+  currentUser: reducerCurrentUser,
+  usersList: reducerCompanionId,
+  idCurrentCompanion: reducerIdCurrentCompanion,
 })
 
 export default rootReducer;

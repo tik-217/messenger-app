@@ -2,7 +2,7 @@
 import React, { Dispatch, useState, useEffect } from "react";
 
 // types
-import { DialogIdType, UserResponse } from "../../../types";
+import { DialogIdType, UserResponse } from "../../types";
 
 // auth
 import { useAuth0 } from "@auth0/auth0-react";
@@ -11,6 +11,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { connect } from "react-redux";
 import creatorDialogId from "../../store/creators/creatorDialogId";
 import creatorCurrentUserId from "../../store/creators/creatorCurrentUserId";
+import creatorIdCurrentCompanion from "../../store/creators/creatorIdCurrentCompanion";
 
 // socket.io
 import { socket } from "../../services/context-socket-io";
@@ -18,13 +19,17 @@ import { socket } from "../../services/context-socket-io";
 function Search({
   sendDialogId,
   sendCurrentUser,
-  currentUserId,
-  companionData,
+  sendIdCurrentCompanion,
+  currentUser,
+  usersList,
+  idCurrentCompanion,
 }: {
   sendDialogId: (dialogIdValue: number) => void;
-  sendCurrentUser: (currentUserId: number) => void;
-  currentUserId: number;
-  companionData: Array<UserResponse>;
+  sendCurrentUser: (currentUser: UserResponse) => void;
+  sendIdCurrentCompanion: (idCurrentCompanion: number) => void;
+  currentUser: UserResponse;
+  usersList: Array<UserResponse>;
+  idCurrentCompanion: string;
 }) {
   const [searchText, setSearchText] = useState<string>();
   const [openDialog, setOpenDialog] = useState<boolean>(false);
@@ -52,13 +57,14 @@ function Search({
           if (el.email !== (user && user.email)) {
             return el.email;
           } else {
-            sendCurrentUser(el.id);
+            sendCurrentUser(el);
           }
         });
 
       setSearchResponse(filteredDeleteCurrentUser);
     });
     socket.emit("searchTextOnline", searchText);
+    // eslint-disable-next-line
   }, [searchText]);
 
   socket.once("searchTextOnline", (socket) => {
@@ -76,7 +82,7 @@ function Search({
     if (openDialog === false) return;
 
     const userIds = {
-      user_ids: [currentUserId, companionData && companionData[0].id],
+      user_ids: [currentUser.id, idCurrentCompanion],
     };
 
     socket.emit("createChat", userIds);
@@ -84,10 +90,15 @@ function Search({
     socket.on("respCreateChat", (chatId) => {
       sendDialogId(chatId);
     });
+
+    // eslint-disable-next-line
   }, [openDialog]);
 
   function registrationWarning(e: React.ChangeEvent<HTMLInputElement>) {
-    
+    // if (searchText === "") {
+    //   setSearchResponse([]);
+    // }
+
     if (!isAuthenticated) {
       alert("Please, register before searching");
     } else {
@@ -97,6 +108,11 @@ function Search({
 
   function getCompanionId(e: React.MouseEvent<HTMLDivElement>) {
     e.preventDefault();
+
+    const companionDiv = (e.nativeEvent.composedPath()[1] as HTMLDivElement);
+    const companionId = companionDiv && Number(companionDiv.dataset.userid);
+
+    companionId && sendIdCurrentCompanion(companionId);
 
     setSearchText("");
     setSearchResponse([]);
@@ -139,8 +155,9 @@ function Search({
 
 function mapStateToProps(state) {
   return {
-    currentUserId: state.currentUserId.currentUserId,
-    companionData: state.companionData.companionData,
+    currentUser: state.currentUser.currentUser,
+    usersList: state.usersList.usersList,
+    idCurrentCompanion: state.idCurrentCompanion.idCurrentCompanion,
   };
 }
 
@@ -148,8 +165,10 @@ function mapDispatchToProps(dispatch: Dispatch<DialogIdType>) {
   return {
     sendDialogId: (dialogIdValue: number) =>
       dispatch(creatorDialogId(dialogIdValue)),
-    sendCurrentUser: (currentUserId: number) =>
-      dispatch(creatorCurrentUserId(currentUserId)),
+    sendCurrentUser: (currentUser: UserResponse) =>
+      dispatch(creatorCurrentUserId(currentUser)),
+    sendIdCurrentCompanion: (idCurrentCompanion: number) =>
+      dispatch(creatorIdCurrentCompanion(idCurrentCompanion)),
   };
 }
 

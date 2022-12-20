@@ -139,6 +139,7 @@ body {
 }
 
 .people-list .chat-list img {
+  height: fit-content;
   width: 45px;
   border-radius: 50%;
 }
@@ -235,6 +236,7 @@ body {
 .chat .chat-history .message-data-time {
   color: #434651;
   padding-left: 6px;
+  margin-right: 10px;
 }
 
 .chat .chat-history .message {
@@ -329,11 +331,9 @@ body {
 @media only screen and (max-width: 767px) {
   .chat-app .people-list {
     height: 465px;
-    width: 100%;
-    overflow-x: auto;
-    background: #fff;
-    left: -400px;
-    display: none;
+      overflow-x: auto;
+      background: #fff;
+      margin: 200px 0 0 0;
   }
 
   .chat-app .people-list.open {

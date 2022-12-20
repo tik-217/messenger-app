@@ -1,11 +1,11 @@
 import { CURRENT_USER_ID } from "../actions/actionCurretUserId";
 
-function currentUserId(state = {}, action) {
+function currentUser(state = {}, action) {
   switch (action.type) {
     case CURRENT_USER_ID:
       return {
         ...state,
-        currentUserId: action.currentUserId
+        currentUser: action.currentUser
       }
     default:
       return {
@@ -14,4 +14,4 @@ function currentUserId(state = {}, action) {
   }
 }
 
-export default currentUserId;
+export default currentUser;

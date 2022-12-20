@@ -1,1 +1,0 @@
-export const COMPANION_DATA = "COMPANION_DATA"

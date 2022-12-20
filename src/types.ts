@@ -25,29 +25,35 @@ export interface ChatContent {
 export interface DialogIdType {
   type: string;
   dialogId?: number;
-  currentUserId?: number;
-  companionData?: Array<UserResponse>;
+  currentUser?: UserResponse;
+  usersList?: Array<UserResponse>;
 }
 
 interface StateDialogId {
   dialogId: number;
 }
 
-interface StateCompanionData {
-  companionData: Array<UserResponse>;
+interface StateUsersList {
+  usersList: Array<UserResponse>;
 }
 
 interface StateCurrentUserId {
-  currentUserId: number;
+  currentUser: UserResponse;
+}
+
+interface StateIdCurrentCompanion {
+  idCurrentCompanion: string;
 }
 
 export interface ChatReduxState {
   dialogId: StateDialogId;
-  companionData: StateCompanionData;
-  currentUserId: StateCurrentUserId
+  usersList: StateUsersList;
+  currentUser: StateCurrentUserId;
+  idCurrentCompanion: StateIdCurrentCompanion
 }
 
 export interface ChatDialogReduxState {
-  currentUserId: StateCurrentUserId;
-  companionData: StateCompanionData;
+  currentUser: StateCurrentUserId;
+  usersList: StateUsersList;
+  idCurrentCompanion: StateIdCurrentCompanion;
 }

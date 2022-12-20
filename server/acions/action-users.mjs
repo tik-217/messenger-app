@@ -20,8 +20,14 @@ export async function createUsers(socket, query) {
 }
 
 export async function findUsers(socket, searchText) {
-  if (!searchText) {
+  if (searchText === "allUsers") {
     socket.emit("respFoundUsers", await Users.findAll());
+  } else if (typeof searchText === "number") {
+    socket.emit("respFoundUsers", await Users.findAll({
+      where: {
+        id: searchText
+      }
+    }));
   } else {
     const substring = await Users.findAll({
       where: {
@@ -44,11 +50,13 @@ export async function findUsers(socket, searchText) {
 }
 
 export async function updateUsers(io, userId, updateString) {
-  await Users.update(updateString, {
+  const updatedField = await Users.update(updateString, {
     where: {
       id: userId,
     }
   });
+
+  console.log(updatedField);
 
   io.emit("updateUsers", await Users.findAll());
 }

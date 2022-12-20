@@ -1,5 +1,5 @@
 // types
-import { UserResponse } from "../../types";
+import { UserResponse } from "../types";
 
 // auth
 import { User } from "@auth0/auth0-react";
@@ -8,20 +8,24 @@ import { socket } from "./context-socket-io";
 export const searchUser = async (
   isAuthenticated: boolean,
   user: User,
-  sendCompanion: (companionId: Array<UserResponse>) => void
+  sendUsersList: (companionData: Array<UserResponse>) => void,
 ) => {
   if (!isAuthenticated) return;
 
-  socket.emit("findUsers", null);
+  socket.emit("findUsers", "allUsers");
 
-  socket.once("respFoundUsers", (usersList) => {
+  console.log(22);
+
+  socket.on("respFoundUsers", (usersList) => {
     const listUsersWithoutCurrent =
       usersList &&
       usersList.filter(
         (el: UserResponse) => el.email !== (user && user.email) && el
       );
+    
+    console.log(listUsersWithoutCurrent);
 
-    sendCompanion(listUsersWithoutCurrent);
+    sendUsersList(listUsersWithoutCurrent);
   });
 };
 

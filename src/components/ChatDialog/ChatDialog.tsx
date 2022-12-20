@@ -2,11 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 
 // types
-import {
-  ChatContent,
-  ChatDialogReduxState,
-  UserResponse,
-} from "../../../types";
+import { ChatContent, ChatDialogReduxState, UserResponse } from "../../types";
 
 // redux
 import { connect } from "react-redux";
@@ -22,12 +18,12 @@ import { socket } from "../../services/context-socket-io";
 
 function ChatDialog({
   dialogId,
-  currentUserId,
-  companionData,
+  currentUser,
+  usersList,
 }: {
   dialogId: number;
-  currentUserId: number;
-  companionData: Array<UserResponse>;
+  currentUser: UserResponse;
+  usersList: Array<UserResponse>;
 }) {
   const [inputMessage, setInputMessage] = useState("");
   const [confirmRequest, setConfirmRequest] = useState(false);
@@ -61,7 +57,7 @@ function ChatDialog({
     if (confirmRequest === false) return;
 
     const chatContentData = {
-      user_id: currentUserId,
+      user_id: currentUser.id,
       chat_id: dialogId,
       content: inputMessage,
     };
@@ -69,6 +65,7 @@ function ChatDialog({
     socket.emit("createChatContent", chatContentData);
 
     setConfirmRequest(false);
+    // eslint-disable-next-line
   }, [confirmRequest]);
 
   socket.on("createChatContent", (socket) => {
@@ -95,7 +92,7 @@ function ChatDialog({
           {chatHistory &&
             chatHistory.map((el: ChatContent) => (
               <React.Fragment key={el.id}>
-                {el.user_id !== companionData[0].id ? (
+                {el.user_id !== usersList[0].id ? (
                   <li className="clearfix">
                     <div className="message-data text-right">
                       <span className="message-data-time">
@@ -145,8 +142,8 @@ function ChatDialog({
 
 function mapStateToProps(state: ChatDialogReduxState) {
   return {
-    currentUserId: state.currentUserId.currentUserId,
-    companionData: state.companionData.companionData,
+    currentUser: state.currentUser.currentUser,
+    usersList: state.usersList.usersList,
   };
 }
 
