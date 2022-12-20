@@ -1,9 +1,6 @@
 // react
 import React, { Dispatch, useState, useEffect } from "react";
 
-// axios
-import axios from "axios";
-
 // types
 import { DialogIdType, UserResponse } from "../../../types";
 
@@ -14,6 +11,9 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { connect } from "react-redux";
 import creatorDialogId from "../../store/creators/creatorDialogId";
 import creatorCurrentUserId from "../../store/creators/creatorCurrentUserId";
+
+// socket.io
+import { socket } from "../../services/context-socket-io";
 
 function Search({
   sendDialogId,
@@ -41,29 +41,29 @@ function Search({
     the currently registered user.
   */
   useEffect(() => {
-    const getCurrentUser = async () => {
-      if (searchText === undefined) return;
+    if (searchText === undefined || searchText === "") return;
 
-      await axios({
-        method: "get",
-        url: "http://localhost:3001/users",
-        params: { searchUserName: searchText },
-      }).then((res) => {
-        const filteredDeleteCurrentUser =
-          res.data &&
-          res.data.filter((el: UserResponse) => {
-            if (el.email !== (user && user.email)) {
-              return el.email;
-            } else {
-              sendCurrentUser(el.id);
-            }
-          });
+    socket.emit("findUsers", searchText);
 
-        setSearchResponse(filteredDeleteCurrentUser);
-      });
-    };
-    getCurrentUser();
+    socket.once("respFoundUsers", (searchUser) => {
+      const filteredDeleteCurrentUser =
+        searchUser &&
+        searchUser.filter((el: UserResponse) => {
+          if (el.email !== (user && user.email)) {
+            return el.email;
+          } else {
+            sendCurrentUser(el.id);
+          }
+        });
+
+      setSearchResponse(filteredDeleteCurrentUser);
+    });
+    socket.emit("searchTextOnline", searchText);
   }, [searchText]);
+
+  socket.once("searchTextOnline", (socket) => {
+    setSearchText(socket);
+  });
 
   /* 
     Chat initialization function that accepts the current user and the user found
@@ -73,23 +73,21 @@ function Search({
     server side.
   */
   useEffect(() => {
-    const initializationsChat = async () => {
-      if (openDialog === false) return;
+    if (openDialog === false) return;
 
-      const chatId = await axios({
-        method: "post",
-        url: "http://localhost:3001/chat",
-        params: {
-          user_ids: [currentUserId, companionData && companionData[0].id],
-        },
-      }).then((res) => res.data);
-
-      sendDialogId(chatId);
+    const userIds = {
+      user_ids: [currentUserId, companionData && companionData[0].id],
     };
-    initializationsChat();
+
+    socket.emit("createChat", userIds);
+
+    socket.on("respCreateChat", (chatId) => {
+      sendDialogId(chatId);
+    });
   }, [openDialog]);
 
   function registrationWarning(e: React.ChangeEvent<HTMLInputElement>) {
+    
     if (!isAuthenticated) {
       alert("Please, register before searching");
     } else {
@@ -101,8 +99,15 @@ function Search({
     e.preventDefault();
 
     setSearchText("");
+    setSearchResponse([]);
     setOpenDialog(true);
   }
+
+  useEffect(() => {
+    if (searchResponse.length !== 0) {
+      localStorage.setItem("lastОpenDialog", JSON.stringify(searchResponse));
+    }
+  }, [searchResponse]);
 
   return (
     <>

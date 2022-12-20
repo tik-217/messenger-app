@@ -1,8 +1,12 @@
 // react
-import React, { useState, useEffect, useRef, useContext } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 // types
-import { ChatContent, ChatDialogReduxState, UserResponse } from "../../../types";
+import {
+  ChatContent,
+  ChatDialogReduxState,
+  UserResponse,
+} from "../../../types";
 
 // redux
 import { connect } from "react-redux";
@@ -10,23 +14,20 @@ import { connect } from "react-redux";
 // utils
 import { changeTimeView } from "../../utils/utils";
 
-// services
-import { sendingMessage } from "../../services/services";
-
 // auth
 import { useAuth0 } from "@auth0/auth0-react";
 
-// axios
-import axios from "axios";
+// socket.io
+import { socket } from "../../services/context-socket-io";
 
 function ChatDialog({
   dialogId,
   currentUserId,
-  companionData
+  companionData,
 }: {
   dialogId: number;
-    currentUserId: number;
-  companionData: Array<UserResponse>
+  currentUserId: number;
+  companionData: Array<UserResponse>;
 }) {
   const [inputMessage, setInputMessage] = useState("");
   const [confirmRequest, setConfirmRequest] = useState(false);
@@ -40,10 +41,6 @@ function ChatDialog({
     messgagesList.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, []);
-
   function cancelingDefaultAction(e: React.KeyboardEvent<HTMLFormElement>) {
     e.preventDefault();
 
@@ -56,24 +53,37 @@ function ChatDialog({
 
   useEffect(() => {
     scrollToBottom();
+  }, []);
 
-    sendingMessage(
-      confirmRequest,
-      setChatHistory,
-      setConfirmRequest,
-      inputMessage,
-      currentUserId,
-      dialogId
-    );
+  useEffect(() => {
+    scrollToBottom();
+
+    if (confirmRequest === false) return;
+
+    const chatContentData = {
+      user_id: currentUserId,
+      chat_id: dialogId,
+      content: inputMessage,
+    };
+
+    socket.emit("createChatContent", chatContentData);
+
+    setConfirmRequest(false);
   }, [confirmRequest]);
+
+  socket.on("createChatContent", (socket) => {
+    setChatHistory(socket);
+  });
 
   useEffect(() => {
     const getDialogData = async () => {
       if (dialogId === undefined || dialogId === null) return;
 
-      await axios("http://localhost:3001/chat-content/getChatContent").then(
-        (res) => setChatHistory(res.data)
-      );
+      socket.emit("findChatContent");
+
+      socket.on("findChatContent", (socket) => {
+        setChatHistory(socket);
+      });
     };
     getDialogData();
   }, [dialogId]);

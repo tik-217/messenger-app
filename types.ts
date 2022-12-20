@@ -5,6 +5,7 @@ export interface UserResponse {
   name: string;
   picture: string;
   locale?: string;
+  session: string | null;
   createdAt: string;
   updatedAt: string;
   email: string;
@@ -43,6 +44,7 @@ interface StateCurrentUserId {
 export interface ChatReduxState {
   dialogId: StateDialogId;
   companionData: StateCompanionData;
+  currentUserId: StateCurrentUserId
 }
 
 export interface ChatDialogReduxState {

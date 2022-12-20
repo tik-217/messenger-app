@@ -1,17 +1,21 @@
 // react
-import React, { Dispatch, useEffect, useState } from "react";
+import { Dispatch, useEffect, useState } from "react";
 
 // components
 import Search from "../Search/Search";
 
 // types
-import { ChatDialogReduxState, DialogIdType, UserResponse } from "../../../types";
+import {
+  ChatDialogReduxState,
+  DialogIdType,
+  UserResponse,
+} from "../../../types";
 
 // auth
 import { useAuth0 } from "@auth0/auth0-react";
 
 // api
-import { searchUser } from "../../services/services";
+import { createTime, searchUser } from "../../services/services";
 
 // redux
 import { connect } from "react-redux";
@@ -19,8 +23,8 @@ import creatorDialogId from "../../store/creators/creatorDialogId";
 import creatorCompanionId from "../../store/creators/creatorCompanionId";
 import creatorCurrentUserId from "../../store/creators/creatorCurrentUserId";
 
-// axios
-import axios from "axios";
+// socket
+import { socket } from "../../services/context-socket-io";
 
 function Sidebar({
   currentUserId,
@@ -29,11 +33,11 @@ function Sidebar({
   sendCurrentUser,
   sendCompanion,
 }: {
-    currentUserId: number;
-    companionData: Array<UserResponse>;
-    sendDialogId: (dialogIdValue: number) => void;
-    sendCurrentUser: (currentUserId: number) => void;
-    sendCompanion: (companionId: Array<UserResponse>) => void;
+  currentUserId: number;
+  companionData: Array<UserResponse>;
+  sendDialogId: (dialogIdValue: number) => void;
+  sendCurrentUser: (currentUserId: number) => void;
+  sendCompanion: (companionId: Array<UserResponse>) => void;
 }) {
   const [openDialog, setOpenDialog] = useState(false);
 
@@ -41,57 +45,52 @@ function Sidebar({
 
   useEffect(() => {
     user && searchUser(isAuthenticated, user, sendCompanion);
+
+    const userName = {
+      searchUserName: user && user.email,
+    };
+
+    socket.emit("findUsers", userName);
   }, []);
 
   useEffect(() => {
-    const initializationsChat = async () => {
-      if (openDialog === false) return;
+    if (openDialog === false) return;
 
-      const chatId = await axios({
-        method: "post",
-        url: "http://localhost:3001/chat",
-        params: {
-          user_ids: [currentUserId, companionData && companionData[0].id],
-        },
-      }).then((res) => res.data);
-
-      sendDialogId(chatId);
+    const userIds = {
+      user_ids: [currentUserId, companionData && companionData[0].id],
     };
-    initializationsChat();
+
+    socket.emit("createChat", userIds);
   }, [openDialog]);
 
   function chooseCompanion() {
-    const getCurrentUser = async () => {
-      await axios({
-        method: "get",
-        url: "http://localhost:3001/users",
-        params: { searchUserName: user && user.email },
-      }).then((res) => {
-        res.data &&
-          res.data.forEach((el: UserResponse) => {
-            if (el.email === (user && user.email)) {
-              sendCurrentUser(el.id);
-            }
-          });
-      });
-    };
-
-    getCurrentUser();
     setOpenDialog(true);
   }
 
+  socket.on("respCreateChat", (socket) => {
+    sendDialogId(socket);
+  });
+
+  socket.on("respFoundUsers", (socket) => {
+    socket.forEach((el: UserResponse) => {
+      if (el.email === (user && user.email)) {
+        sendCurrentUser(el.id);
+      }
+    });
+  });
+
   return (
     <div id="plist" className="people-list">
-        <div className="input-group">
-          <div className="input-group-prepend">
-            <span className="input-group-text" id="basic-addon1">
-              <i className="fa fa-search"></i>
-            </span>
-          </div>
-          <div>
-            <Search />
-          </div>
+      <div className="input-group">
+        <div className="input-group-prepend">
+          <span className="input-group-text" id="basic-addon1">
+            <i className="fa fa-search"></i>
+          </span>
         </div>
+        <div>
+          <Search />
+        </div>
+      </div>
       <ul className="list-unstyled chat-list mt-2 mb-0">
         {companionData &&
           companionData.map((el: UserResponse) => (
@@ -103,9 +102,9 @@ function Sidebar({
               <img src={el.picture} alt="avatar" />
               <div className="about">
                 <div className="name">{el.name}</div>
-                {/* <div className="status">
-              <i className="fa fa-circle offline"></i> offline since Oct 28
-            </div> */}
+                <div className="status">
+                  {createTime(companionData[0].session)}
+                </div>
               </div>
             </li>
           ))}

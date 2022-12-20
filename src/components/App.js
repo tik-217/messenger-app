@@ -1,5 +1,5 @@
 // react
-import React, { useContext } from "react";
+import React, { useEffect, useContext } from "react";
 
 // components
 import Chat from "./Chat/Chat.tsx";
@@ -9,7 +9,7 @@ import Sidebar from "./Sidebar/Sidebar";
 import { useAuth0 } from "@auth0/auth0-react";
 
 // socket.io
-import { SocketContext } from "../services/context-socket-io.js";
+import { SocketContext } from "../services/context-socket-io";
 
 // images
 import loaderImage from "../assets/icons/Spinner-1s-200px.gif";

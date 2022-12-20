@@ -19,6 +19,10 @@ Users.init(
       type: DataTypes.STRING,
       allowNull: false
     },
+    session: {
+      type: DataTypes.DATE,
+      // allowNull: false
+    },
     picture: {
       type: DataTypes.STRING,
       allowNull: false
