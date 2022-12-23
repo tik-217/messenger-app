@@ -20,8 +20,9 @@ Users.init(
       allowNull: false
     },
     session: {
-      type: DataTypes.DATE,
-      // allowNull: false
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: false
     },
     picture: {
       type: DataTypes.STRING,

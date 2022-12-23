@@ -5,7 +5,7 @@ export interface UserResponse {
   name: string;
   picture: string;
   locale?: string;
-  session: string | null;
+  session: boolean;
   createdAt: string;
   updatedAt: string;
   email: string;

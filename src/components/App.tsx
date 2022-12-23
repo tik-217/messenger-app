@@ -17,10 +17,10 @@ import { socket } from "../services/context-socket-io";
 // redux
 import { connect } from "react-redux";
 import creatorCurrentUserId from "../store/creators/creatorCurrentUserId";
+import creatorUsersList from "../store/creators/creatorUsersList";
 
 // images
 import loaderImage from "../assets/icons/Spinner-1s-200px.gif";
-import creatorUsersList from "../store/creators/creatorUsersList";
 
 function App({
   sendCurrentUser,

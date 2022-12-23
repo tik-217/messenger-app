@@ -37,6 +37,8 @@ function ChatDialog({
     messgagesList.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   };
 
+  scrollToBottom();
+
   function cancelingDefaultAction(e: React.KeyboardEvent<HTMLFormElement>) {
     e.preventDefault();
 
@@ -47,9 +49,7 @@ function ChatDialog({
     setConfirmRequest(true);
   }
 
-  useEffect(() => {
-    scrollToBottom();
-  }, []);
+  useEffect(() => scrollToBottom(), [chatHistory]);
 
   useEffect(() => {
     scrollToBottom();

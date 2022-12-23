@@ -15,6 +15,7 @@ import { ChatReduxState, DialogIdType, UserResponse } from "../../types";
 import { socket } from "../../services/context-socket-io";
 import { createTime } from "../../services/services";
 import creatorIdCurrentCompanion from "../../store/creators/creatorIdCurrentCompanion";
+import creatorUsersList from "../../store/creators/creatorUsersList";
 
 function Chat({
   dialogId,
@@ -23,7 +24,7 @@ function Chat({
 }: {
   dialogId: number;
   currentUser: UserResponse;
-  idCurrentCompanion: string;
+    idCurrentCompanion: string;
   }) {
   const [companionData, setCompanionData] = useState<Array<UserResponse>>([]);
   const { loginWithRedirect, logout, user, isAuthenticated } = useAuth0();
@@ -36,9 +37,7 @@ function Chat({
   useEffect(() => {
     if (!isAuthenticated && user && Object.keys(user).length !== 0) return;
 
-    const date = +new Date();
-
-    socket.emit("createUsers", user && { ...user, session: date });
+    socket.emit("createUsers", user && { ...user, session: false });
 
     socket.on("respCreatedUser", (socket) => console.log(socket));
     // eslint-disable-next-line
@@ -47,14 +46,14 @@ function Chat({
   useEffect(() => {
     if (!currentUser) return;
 
-    const date = +new Date();
+    const date = new Date().toISOString();
 
     const sessionDate = {
-      session: date,
+      session: true,
     };
 
     const sessionNull = {
-      session: null,
+      session: false,
     };
 
     window.addEventListener("focus", () => {
@@ -67,10 +66,6 @@ function Chat({
       socket.emit("updateUsers", currentUser.id, sessionDate);
     });
   }, [currentUser]);
-
-  socket.on("updateUsers", (socket) => {
-    console.log(socket);
-  });
 
   useEffect(() => {
     if (!idCurrentCompanion) return;
@@ -117,7 +112,7 @@ function Chat({
                   <img src={companionData.length !== 0 ? companionData[0].picture : "/"} alt="avatar" />
                   <div className="chat-about">
                     <h6 className="m-b-0">{companionData.length !== 0 && companionData[0].name}</h6>
-                    <small>{createTime(companionData.length !== 0 ? companionData[0].session : "")}</small>
+                    <small>{createTime(companionData.length !== 0 ? companionData[0].updatedAt : "")}</small>
                   </div>
                 </div>
                 <div className="col-lg-6 hidden-sm text-right">

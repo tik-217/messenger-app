@@ -14,8 +14,6 @@ export const searchUser = async (
 
   socket.emit("findUsers", "allUsers");
 
-  console.log(22);
-
   socket.on("respFoundUsers", (usersList) => {
     const listUsersWithoutCurrent =
       usersList &&
@@ -23,24 +21,21 @@ export const searchUser = async (
         (el: UserResponse) => el.email !== (user && user.email) && el
       );
     
-    console.log(listUsersWithoutCurrent);
-
     sendUsersList(listUsersWithoutCurrent);
   });
 };
 
-export function createTime(timeString: string | null) {
+export function createTime(timeString: string) {
   if (timeString) {
     const date = timeString && new Date(timeString);
-    const hours = date && date.getHours();
+    const hours = date && date.toLocaleTimeString().slice(0,5);
     const minutes = date && date.getMinutes();
     const getDate = date && date.getDate();
     const month = date && date.toLocaleString("en-US", { month: "long" });
 
     return (
       <>
-        <i className="fa fa-circle offline"></i> offline since {hours}:{minutes}
-        , {getDate}, {month}
+        <i className="fa fa-circle offline"></i> offline since {hours}
       </>
     );
   } else {

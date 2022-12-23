@@ -27,8 +27,8 @@ app.use(cors());
 io.on("connection", (socket) => {
   socket.on("createUsers", async (user) => createUsers(socket, user));
   socket.on("findUsers", async (searchText) => findUsers(socket, searchText));
-  socket.on("updateUsers", async (io, userId, updateString) =>
-    updateUsers(socket, userId, updateString)
+  socket.on("updateUsers", async (userId, updateString) =>
+    updateUsers(io, userId, updateString)
   );
   socket.on("deleteUsers", async (user) => deleteUsers(socket, user));
 

@@ -17,21 +17,25 @@ import creatorDialogId from "../../store/creators/creatorDialogId";
 // socket
 import { socket } from "../../services/context-socket-io";
 import creatorIdCurrentCompanion from "../../store/creators/creatorIdCurrentCompanion";
+import creatorUsersList from "../../store/creators/creatorUsersList";
+import { useAuth0 } from "@auth0/auth0-react";
 
 function Sidebar({
   currentUser,
   usersList,
-  idCurrentCompanion,
   sendDialogId,
   sendIdCurrentCompanion,
+  sendUsersList,
 }: {
   currentUser: UserResponse;
   usersList: Array<UserResponse>;
-  idCurrentCompanion: string;
   sendDialogId: (dialogIdValue: number) => void;
   sendIdCurrentCompanion: (idCurrentCompanion: number) => void;
+  sendUsersList: (usersList: Array<UserResponse>) => void;
 }) {
   const [openDialog, setOpenDialog] = useState(false);
+
+  const { user } = useAuth0();
 
   // useEffect(() => {
   //   const lastOpenDialog = localStorage.getItem("lastОpenDialog");
@@ -50,15 +54,29 @@ function Sidebar({
     // eslint-disable-next-line
   }, [openDialog]);
 
+  socket.once("updateUsers", (newUsersList) => {
+    const listUsersWithoutCurrent =
+      newUsersList &&
+      newUsersList.filter(
+        (el: UserResponse) => el.email !== (user && user.email) && el
+      );
+    
+    sendUsersList(listUsersWithoutCurrent);
+  });
+
   function chooseCompanion(e: React.MouseEvent<HTMLLIElement>) {
     const companionDiv = e.nativeEvent.composedPath();
-    const getLiElement: object = companionDiv.filter(el => (el as HTMLElement).tagName === "LI");
+    const getLiElement: object = companionDiv.filter(
+      (el) => (el as HTMLElement).tagName === "LI"
+    );
     const companionId = getLiElement[0].dataset.userId;
 
     companionId && sendIdCurrentCompanion(companionId);
 
     setOpenDialog(true);
   }
+
+  console.log(usersList);
 
   socket.on("respCreateChat", (socket) => {
     sendDialogId(socket);
@@ -91,7 +109,9 @@ function Sidebar({
               <img src={el.picture} alt="avatar" />
               <div className="about">
                 <div className="name">{el.name}</div>
-                <div className="status">{createTime(usersList[0].session)}</div>
+                <div className="status">
+                  {createTime(usersList[0].updatedAt)}
+                </div>
               </div>
             </li>
           ))}
@@ -106,6 +126,8 @@ function mapDispatchToProps(dispatch: Dispatch<DialogIdType>) {
       dispatch(creatorDialogId(dialogIdValue)),
     sendIdCurrentCompanion: (idCurrentCompanion: number) =>
       dispatch(creatorIdCurrentCompanion(idCurrentCompanion)),
+    sendUsersList: (usersList: Array<UserResponse>) =>
+      dispatch(creatorUsersList(usersList)),
   };
 }
 
@@ -113,7 +135,6 @@ function mapStateToProps(state: ChatDialogReduxState) {
   return {
     currentUser: state.currentUser.currentUser,
     usersList: state.usersList.usersList,
-    idCurrentCompanion: state.idCurrentCompanion.idCurrentCompanion,
   };
 }
 

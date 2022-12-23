@@ -50,13 +50,11 @@ export async function findUsers(socket, searchText) {
 }
 
 export async function updateUsers(io, userId, updateString) {
-  const updatedField = await Users.update(updateString, {
+  await Users.update(updateString, {
     where: {
       id: userId,
     }
   });
-
-  console.log(updatedField);
 
   io.emit("updateUsers", await Users.findAll());
 }
