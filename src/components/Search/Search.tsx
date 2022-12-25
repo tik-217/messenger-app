@@ -9,33 +9,30 @@ import { useAuth0 } from "@auth0/auth0-react";
 
 // redux
 import { connect } from "react-redux";
-import creatorDialogId from "../../store/creators/creatorDialogId";
-import creatorCurrentUserId from "../../store/creators/creatorCurrentUserId";
-import creatorIdCurrentCompanion from "../../store/creators/creatorIdCurrentCompanion";
 
 // socket.io
 import { socket } from "../../services/context-socket-io";
-
-function Search({
-  sendDialogId,
-  sendCurrentUser,
-  sendIdCurrentCompanion,
+import { writingToLocalStorage } from "../../services/services";
+import {
   currentUser,
-  usersList,
+  dialogId,
   idCurrentCompanion,
-}: {
-  sendDialogId: (dialogIdValue: number) => void;
-  sendCurrentUser: (currentUser: UserResponse) => void;
-  sendIdCurrentCompanion: (idCurrentCompanion: number) => void;
-  currentUser: UserResponse;
-  usersList: Array<UserResponse>;
-  idCurrentCompanion: string;
-}) {
+} from "../../store/reducers/rootReducers";
+import { useAppDispatch, useAppSelector } from "../../store/store";
+
+function Search() {
   const [searchText, setSearchText] = useState<string>();
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [searchResponse, setSearchResponse] = useState<Array<UserResponse>>([]);
 
   const { user, isAuthenticated } = useAuth0();
+
+  const userListStore: any = useAppSelector();
+  const dispatch = useAppDispatch();
+
+  const currentUserData = userListStore.currentUser;
+  const usersListData = userListStore.usersList;
+  const idCurrentCompanionData = userListStore.idCurrentCompanion;
 
   /* 
     Global user search system (output input search).
@@ -53,11 +50,12 @@ function Search({
     socket.once("respFoundUsers", (searchUser) => {
       const filteredDeleteCurrentUser =
         searchUser &&
+        // eslint-disable-next-line
         searchUser.filter((el: UserResponse) => {
           if (el.email !== (user && user.email)) {
             return el.email;
           } else {
-            sendCurrentUser(el);
+            dispatch(currentUser(el));
           }
         });
 
@@ -81,24 +79,24 @@ function Search({
   useEffect(() => {
     if (openDialog === false) return;
 
+    if (!usersListData) return;
+
+    writingToLocalStorage(usersListData);
+
     const userIds = {
-      user_ids: [currentUser.id, idCurrentCompanion],
+      user_ids: [currentUserData.id, idCurrentCompanionData],
     };
 
     socket.emit("createChat", userIds);
 
     socket.on("respCreateChat", (chatId) => {
-      sendDialogId(chatId);
+      dispatch(dialogId(chatId));
     });
 
     // eslint-disable-next-line
   }, [openDialog]);
 
   function registrationWarning(e: React.ChangeEvent<HTMLInputElement>) {
-    // if (searchText === "") {
-    //   setSearchResponse([]);
-    // }
-
     if (!isAuthenticated) {
       alert("Please, register before searching");
     } else {
@@ -109,21 +107,15 @@ function Search({
   function getCompanionId(e: React.MouseEvent<HTMLDivElement>) {
     e.preventDefault();
 
-    const companionDiv = (e.nativeEvent.composedPath()[1] as HTMLDivElement);
+    const companionDiv = e.nativeEvent.composedPath()[1] as HTMLDivElement;
     const companionId = companionDiv && Number(companionDiv.dataset.userid);
 
-    companionId && sendIdCurrentCompanion(companionId);
+    companionId && dispatch(idCurrentCompanion(companionId));
 
     setSearchText("");
     setSearchResponse([]);
     setOpenDialog(true);
   }
-
-  useEffect(() => {
-    if (searchResponse.length !== 0) {
-      localStorage.setItem("lastОpenDialog", JSON.stringify(searchResponse));
-    }
-  }, [searchResponse]);
 
   return (
     <>
@@ -154,22 +146,7 @@ function Search({
 }
 
 function mapStateToProps(state) {
-  return {
-    currentUser: state.currentUser.currentUser,
-    usersList: state.usersList.usersList,
-    idCurrentCompanion: state.idCurrentCompanion.idCurrentCompanion,
-  };
+  return {};
 }
 
-function mapDispatchToProps(dispatch: Dispatch<DialogIdType>) {
-  return {
-    sendDialogId: (dialogIdValue: number) =>
-      dispatch(creatorDialogId(dialogIdValue)),
-    sendCurrentUser: (currentUser: UserResponse) =>
-      dispatch(creatorCurrentUserId(currentUser)),
-    sendIdCurrentCompanion: (idCurrentCompanion: number) =>
-      dispatch(creatorIdCurrentCompanion(idCurrentCompanion)),
-  };
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(Search);
+export default connect(mapStateToProps)(Search);

@@ -8,7 +8,7 @@ import { socket } from "./context-socket-io";
 export const searchUser = async (
   isAuthenticated: boolean,
   user: User,
-  sendUsersList: (companionData: Array<UserResponse>) => void,
+  sendUsersList: (companionData: Array<UserResponse>) => void
 ) => {
   if (!isAuthenticated) return;
 
@@ -20,7 +20,7 @@ export const searchUser = async (
       usersList.filter(
         (el: UserResponse) => el.email !== (user && user.email) && el
       );
-    
+
     sendUsersList(listUsersWithoutCurrent);
   });
 };
@@ -28,14 +28,11 @@ export const searchUser = async (
 export function createTime(timeString: string) {
   if (timeString) {
     const date = timeString && new Date(timeString);
-    const hours = date && date.toLocaleTimeString().slice(0,5);
-    const minutes = date && date.getMinutes();
-    const getDate = date && date.getDate();
-    const month = date && date.toLocaleString("en-US", { month: "long" });
+    const time = date && date.toLocaleTimeString().slice(0, 5);
 
     return (
       <>
-        <i className="fa fa-circle offline"></i> offline since {hours}
+        <i className="fa fa-circle offline"></i> offline since {time}
       </>
     );
   } else {
@@ -45,4 +42,8 @@ export function createTime(timeString: string) {
       </>
     );
   }
+}
+
+export function writingToLocalStorage(dialogData) {
+  localStorage.setItem("lastОpenDialog", JSON.stringify(dialogData));
 }

@@ -8,45 +8,33 @@ import { useAuth0 } from "@auth0/auth0-react";
 import ChatDialog from "../ChatDialog/ChatDialog";
 
 // redux
-import { connect } from "react-redux";
+// import { connect } from "react-redux";
 
 // types
-import { ChatReduxState, DialogIdType, UserResponse } from "../../types";
-import { socket } from "../../services/context-socket-io";
-import { createTime } from "../../services/services";
-import creatorIdCurrentCompanion from "../../store/creators/creatorIdCurrentCompanion";
-import creatorUsersList from "../../store/creators/creatorUsersList";
+import { UserResponse } from "../../types";
 
-function Chat({
-  dialogId,
-  currentUser,
-  idCurrentCompanion,
-}: {
-  dialogId: number;
-  currentUser: UserResponse;
-    idCurrentCompanion: string;
-  }) {
+// socket.io
+import { socket } from "../../services/context-socket-io";
+
+// services
+import { createTime } from "../../services/services";
+import { useAppDispatch, useAppSelector } from "../../store/store";
+
+export default function Chat() {
   const [companionData, setCompanionData] = useState<Array<UserResponse>>([]);
+
   const { loginWithRedirect, logout, user, isAuthenticated } = useAuth0();
 
-  /*
-    Creating a user based on the information received from the registration form.
+  const userListStore: any = useAppSelector();
+  const dispatch = useAppDispatch();
 
-    The user must be registered and the user variable must not be empty.
-  */
-  useEffect(() => {
-    if (!isAuthenticated && user && Object.keys(user).length !== 0) return;
-
-    socket.emit("createUsers", user && { ...user, session: false });
-
-    socket.on("respCreatedUser", (socket) => console.log(socket));
-    // eslint-disable-next-line
-  }, []);
+  const currentUserData = userListStore.currentUser;
+  const usersListData = userListStore.usersList;
+  const idCurrentCompanionData = userListStore.idCurrentCompanion;
+  const dialogIdData = userListStore.dialogId;
 
   useEffect(() => {
-    if (!currentUser) return;
-
-    const date = new Date().toISOString();
+    if (!currentUserData) return;
 
     const sessionDate = {
       session: true,
@@ -57,30 +45,28 @@ function Chat({
     };
 
     window.addEventListener("focus", () => {
-      console.log("online");
-      socket.emit("updateUsers", currentUser.id, sessionNull);
+      socket.emit("updateUsers", currentUserData.id, sessionNull);
     });
 
     window.addEventListener("blur", () => {
-      console.log("offline");
-      socket.emit("updateUsers", currentUser.id, sessionDate);
+      socket.emit("updateUsers", currentUserData.id, sessionDate);
     });
-  }, [currentUser]);
+  }, [currentUserData]);
 
   useEffect(() => {
-    if (!idCurrentCompanion) return;
+    if (!idCurrentCompanionData) return;
 
-    socket.emit("findUsers", Number(idCurrentCompanion));
+    socket.emit("findUsers", Number(idCurrentCompanionData));
 
     socket.on("respFoundUsers", (foundUsers) => {
       setCompanionData(foundUsers);
     });
-  }, [idCurrentCompanion]);
+  }, [idCurrentCompanionData]);
 
   return (
     <>
       <div className="chat">
-        {dialogId === undefined ? (
+        {!dialogIdData ? (
           <div className="chat-initial">
             {isAuthenticated === true ? (
               <div className="">
@@ -109,10 +95,25 @@ function Chat({
             <div className="chat-header clearfix">
               <div className="row">
                 <div className="col-lg-6">
-                  <img src={companionData.length !== 0 ? companionData[0].picture : "/"} alt="avatar" />
+                  <img
+                    src={
+                      companionData.length !== 0
+                        ? companionData[0].picture
+                        : "/"
+                    }
+                    alt="avatar"
+                  />
                   <div className="chat-about">
-                    <h6 className="m-b-0">{companionData.length !== 0 && companionData[0].name}</h6>
-                    <small>{createTime(companionData.length !== 0 ? companionData[0].updatedAt : "")}</small>
+                    <h6 className="m-b-0">
+                      {companionData.length !== 0 && companionData[0].name}
+                    </h6>
+                    <small>
+                      {createTime(
+                        companionData.length !== 0
+                          ? companionData[0].updatedAt
+                          : ""
+                      )}
+                    </small>
                   </div>
                 </div>
                 <div className="col-lg-6 hidden-sm text-right">
@@ -142,27 +143,10 @@ function Chat({
                 </div>
               </div>
             </div>
-            <ChatDialog dialogId={dialogId} />
+            <ChatDialog dialogIdData={dialogIdData} />
           </>
         )}
       </div>
     </>
   );
 }
-
-function mapStateToProps(state: ChatReduxState) {
-  return {
-    dialogId: state.dialogId.dialogId,
-    currentUser: state.currentUser.currentUser,
-    idCurrentCompanion: state.idCurrentCompanion.idCurrentCompanion,
-  };
-}
-
-function mapDispatchToProps(dispatch: Dispatch<DialogIdType>) {
-  return {
-    sendIdCurrentCompanion: (idCurrentCompanion: number) =>
-      dispatch(creatorIdCurrentCompanion(idCurrentCompanion)),
-  };
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(Chat);

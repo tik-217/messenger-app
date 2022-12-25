@@ -6,7 +6,7 @@ import Chat from "./Chat/Chat";
 import Sidebar from "./Sidebar/Sidebar";
 
 // auth
-import { useAuth0 } from "@auth0/auth0-react";
+import { User, useAuth0 } from "@auth0/auth0-react";
 
 // types
 import { DialogIdType, UserResponse } from "../types";
@@ -15,26 +15,23 @@ import { DialogIdType, UserResponse } from "../types";
 import { socket } from "../services/context-socket-io";
 
 // redux
-import { connect } from "react-redux";
-import creatorCurrentUserId from "../store/creators/creatorCurrentUserId";
-import creatorUsersList from "../store/creators/creatorUsersList";
+import { connect, useDispatch, useSelector } from "react-redux";
+import {
+  // getUsers,
+  currentUser,
+  getUsers,
+  usersList,
+} from "../store/reducers/rootReducers";
+import { useAppSelector, useAppDispatch, AppDispatch } from "../store/store";
 
 // images
 import loaderImage from "../assets/icons/Spinner-1s-200px.gif";
 
-function App({
-  sendCurrentUser,
-  sendUsersList,
-}: {
-  sendCurrentUser: (currentUserId: UserResponse) => void;
-  sendUsersList: (companionData: Array<UserResponse>) => void;
-}) {
+function App() {
   const { isLoading, user, isAuthenticated } = useAuth0();
 
-  // Connection socket.io
-  socket.on("connect", () => {
-    console.log(socket);
-  });
+  const userListStore = useAppSelector();
+  const dispatch = useAppDispatch();
 
   socket.on("connect_error", (err) => {
     console.log(`connect_error due to ${err.message}`);
@@ -43,35 +40,38 @@ function App({
   // Get users list
   useEffect(() => {
     if (!isAuthenticated && !user) return;
-    
+
     const userName = {
       searchUserName: user && user.email,
     };
 
-    socket.emit("findUsers", "allUsers");
-
     socket.emit("findUsers", userName);
+
+    user && dispatch(getUsers(user));
 
     // eslint-disable-next-line
   }, [user, isAuthenticated]);
 
-  socket.once("respFoundUsers", (usersList) => {
-    const listUsersWithoutCurrent =
-      usersList &&
-      usersList.filter(
-        (el: UserResponse) => el.email !== (user && user.email) && el
-      );
-
-    sendUsersList(listUsersWithoutCurrent);
-  });
-
-  socket.once("respFoundUsers", (foundUser) => {
+  socket.on("respFoundUsers", (foundUser) => {
     foundUser.forEach((el: UserResponse) => {
       if (el.email === (user && user.email)) {
-        sendCurrentUser(el);
+        dispatch(currentUser(el));
       }
     });
   });
+
+  /*
+    Creating a user based on the information received from the registration form.
+
+    The user must be registered and the user variable must not be empty.
+  */
+  useEffect(() => {
+    if (!isAuthenticated && user && Object.keys(user).length !== 0) return;
+
+    socket.emit("createUsers", user && { ...user, session: false });
+
+    // eslint-disable-next-line
+  }, [user]);
 
   if (isLoading) {
     setTimeout(() => {
@@ -101,13 +101,4 @@ function App({
   );
 }
 
-function mapDispatchToProps(dispatch: Dispatch<DialogIdType>) {
-  return {
-    sendCurrentUser: (currentUserId: UserResponse) =>
-      dispatch(creatorCurrentUserId(currentUserId)),
-    sendUsersList: (usersList: Array<UserResponse>) =>
-      dispatch(creatorUsersList(usersList)),
-  };
-}
-
-export default connect(null, mapDispatchToProps)(App);
+export default connect()(App);

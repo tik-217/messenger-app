@@ -15,21 +15,20 @@ import { useAuth0 } from "@auth0/auth0-react";
 
 // socket.io
 import { socket } from "../../services/context-socket-io";
+import { useAppDispatch, useAppSelector } from "../../store/store";
 
-function ChatDialog({
-  dialogId,
-  currentUser,
-  usersList,
-}: {
-  dialogId: number;
-  currentUser: UserResponse;
-  usersList: Array<UserResponse>;
-}) {
+function ChatDialog({ dialogIdData }: { dialogIdData: number }) {
   const [inputMessage, setInputMessage] = useState("");
   const [confirmRequest, setConfirmRequest] = useState(false);
   const [chatHistory, setChatHistory] = useState<Array<ChatContent>>([]);
 
   const { user } = useAuth0();
+
+  const userListStore: any = useAppSelector();
+  const dispatch = useAppDispatch();
+
+  const currentUserData = userListStore.currentUser;
+  const usersListData = userListStore.usersList;
 
   const messgagesList = useRef<null | HTMLUListElement>(null);
 
@@ -57,8 +56,8 @@ function ChatDialog({
     if (confirmRequest === false) return;
 
     const chatContentData = {
-      user_id: currentUser.id,
-      chat_id: dialogId,
+      user_id: currentUserData.id,
+      chat_id: dialogIdData,
       content: inputMessage,
     };
 
@@ -74,7 +73,7 @@ function ChatDialog({
 
   useEffect(() => {
     const getDialogData = async () => {
-      if (dialogId === undefined || dialogId === null) return;
+      if (dialogIdData === undefined || dialogIdData === null) return;
 
       socket.emit("findChatContent");
 
@@ -83,7 +82,7 @@ function ChatDialog({
       });
     };
     getDialogData();
-  }, [dialogId]);
+  }, [dialogIdData]);
 
   return (
     <>
@@ -92,7 +91,7 @@ function ChatDialog({
           {chatHistory &&
             chatHistory.map((el: ChatContent) => (
               <React.Fragment key={el.id}>
-                {el.user_id !== usersList[0].id ? (
+                {el.user_id !== usersListData[0].id ? (
                   <li className="clearfix">
                     <div className="message-data text-right">
                       <span className="message-data-time">
@@ -140,10 +139,11 @@ function ChatDialog({
   );
 }
 
-function mapStateToProps(state: ChatDialogReduxState) {
+// function mapStateToProps(state: ChatDialogReduxState) {
+function mapStateToProps(state) {
   return {
-    currentUser: state.currentUser.currentUser,
-    usersList: state.usersList.usersList,
+    currentUser: state.allReducers,
+    usersList: state.allReducers,
   };
 }
 

@@ -4,13 +4,16 @@ import { Op } from "sequelize";
 import Users from "../models/users/users.mjs";
 
 export async function createUsers(socket, query) {
-  if (!query) return;
+  if (query === null) return;
+
 
   const findEmail = await Users.findAll({
     where: {
       email: query.email,
     },
   });
+
+  console.log(await Users.findAll(), " ++++++++++++++++++++");
 
   if (findEmail.length === 0) {
     await Users.create(query);
@@ -21,6 +24,8 @@ export async function createUsers(socket, query) {
 
 export async function findUsers(socket, searchText) {
   if (searchText === "allUsers") {
+    const allUsers = await Users.findAll();
+    console.log(await Users.findAll(), " ==========================");
     socket.emit("respFoundUsers", await Users.findAll());
   } else if (typeof searchText === "number") {
     socket.emit("respFoundUsers", await Users.findAll({

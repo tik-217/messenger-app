@@ -8,46 +8,48 @@ import Search from "../Search/Search";
 import { ChatDialogReduxState, DialogIdType, UserResponse } from "../../types";
 
 // api
-import { createTime } from "../../services/services";
+import { createTime, writingToLocalStorage } from "../../services/services";
 
 // redux
 import { connect } from "react-redux";
-import creatorDialogId from "../../store/creators/creatorDialogId";
 
 // socket
 import { socket } from "../../services/context-socket-io";
-import creatorIdCurrentCompanion from "../../store/creators/creatorIdCurrentCompanion";
-import creatorUsersList from "../../store/creators/creatorUsersList";
-import { useAuth0 } from "@auth0/auth0-react";
 
-function Sidebar({
-  currentUser,
+// auth
+import { useAuth0 } from "@auth0/auth0-react";
+import {
+  stateInterface,
+  useAppDispatch,
+  useAppSelector,
+} from "../../store/store";
+import {
+  dialogId,
+  idCurrentCompanion,
   usersList,
-  sendDialogId,
-  sendIdCurrentCompanion,
-  sendUsersList,
-}: {
-  currentUser: UserResponse;
-  usersList: Array<UserResponse>;
-  sendDialogId: (dialogIdValue: number) => void;
-  sendIdCurrentCompanion: (idCurrentCompanion: number) => void;
-  sendUsersList: (usersList: Array<UserResponse>) => void;
-}) {
+} from "../../store/reducers/rootReducers";
+
+export default function Sidebar() {
   const [openDialog, setOpenDialog] = useState(false);
 
   const { user } = useAuth0();
 
-  // useEffect(() => {
-  //   const lastOpenDialog = localStorage.getItem("lastОpenDialog");
+  const userListStore: any = useAppSelector();
+  const dispatch = useAppDispatch();
 
-  //   setSearchResponse(lastOpenDialog && JSON.parse(lastOpenDialog))
-  // }, [])
+  const usersListData = userListStore.usersList;
+  const currentUserData = userListStore.currentUser;
 
   useEffect(() => {
     if (openDialog === false) return;
 
+    if (!usersListData && !currentUserData && currentUserData.length === 0)
+      return;
+
+    // writingToLocalStorage(usersListData);
+
     const userIds = {
-      user_ids: [currentUser.id, usersList && usersList[0].id],
+      user_ids: [currentUserData.id, usersListData && usersListData[0].id],
     };
 
     socket.emit("createChat", userIds);
@@ -60,8 +62,8 @@ function Sidebar({
       newUsersList.filter(
         (el: UserResponse) => el.email !== (user && user.email) && el
       );
-    
-    sendUsersList(listUsersWithoutCurrent);
+
+    dispatch(usersList(listUsersWithoutCurrent));
   });
 
   function chooseCompanion(e: React.MouseEvent<HTMLLIElement>) {
@@ -71,16 +73,22 @@ function Sidebar({
     );
     const companionId = getLiElement[0].dataset.userId;
 
-    companionId && sendIdCurrentCompanion(companionId);
+    companionId && dispatch(idCurrentCompanion(companionId));
 
     setOpenDialog(true);
   }
 
-  console.log(usersList);
-
   socket.on("respCreateChat", (socket) => {
-    sendDialogId(socket);
+    dispatch(dialogId(socket));
   });
+
+  // useEffect(() => {
+  //   const storageContent = localStorage.getItem("lastОpenDialog");
+
+  //   if (storageContent !== null && storageContent !== "undefined") {
+  //     setOpenDialog(true);
+  //   }
+  // }, [usersListData]);
 
   return (
     <div id="plist" className="people-list">
@@ -98,8 +106,8 @@ function Sidebar({
         </div>
       </div>
       <ul className="list-unstyled chat-list mt-2 mb-0">
-        {usersList &&
-          usersList.map((el: UserResponse) => (
+        {usersListData &&
+          usersListData.map((el: UserResponse) => (
             <li
               className="clearfix d-flex align-items-center"
               key={el.id}
@@ -109,9 +117,7 @@ function Sidebar({
               <img src={el.picture} alt="avatar" />
               <div className="about">
                 <div className="name">{el.name}</div>
-                <div className="status">
-                  {createTime(usersList[0].updatedAt)}
-                </div>
+                <div className="status">{createTime(el.updatedAt)}</div>
               </div>
             </li>
           ))}
@@ -119,23 +125,3 @@ function Sidebar({
     </div>
   );
 }
-
-function mapDispatchToProps(dispatch: Dispatch<DialogIdType>) {
-  return {
-    sendDialogId: (dialogIdValue: number) =>
-      dispatch(creatorDialogId(dialogIdValue)),
-    sendIdCurrentCompanion: (idCurrentCompanion: number) =>
-      dispatch(creatorIdCurrentCompanion(idCurrentCompanion)),
-    sendUsersList: (usersList: Array<UserResponse>) =>
-      dispatch(creatorUsersList(usersList)),
-  };
-}
-
-function mapStateToProps(state: ChatDialogReduxState) {
-  return {
-    currentUser: state.currentUser.currentUser,
-    usersList: state.usersList.usersList,
-  };
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(Sidebar);
