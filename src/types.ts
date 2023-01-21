@@ -29,6 +29,14 @@ export interface DialogIdType {
   usersList?: Array<UserResponse>;
 }
 
+export interface IInitialState extends StateCurrentUserId {
+  // currentUser: UserResponse;
+  usersList: UserResponse[];
+  idCurrentCompanion: number;
+  dialogId: number;
+  isOnline: boolean;
+}
+
 interface StateDialogId {
   dialogId: number;
 }
@@ -49,7 +57,7 @@ export interface ChatReduxState {
   dialogId: StateDialogId;
   usersList: StateUsersList;
   currentUser: StateCurrentUserId;
-  idCurrentCompanion: StateIdCurrentCompanion
+  idCurrentCompanion: StateIdCurrentCompanion;
 }
 
 export interface ChatDialogReduxState {

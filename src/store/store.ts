@@ -1,28 +1,17 @@
 import { configureStore } from "@reduxjs/toolkit";
-import { useDispatch, useSelector } from "react-redux";
+import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 
-import rootReducers, {
-  currentUser,
-  usersList,
-  idCurrentCompanion,
-  dialogId,
-} from "./reducers/rootReducers";
+import rootReducers from "./rootReducers";
 
 const store = configureStore({
   reducer: rootReducers,
 });
 
-export interface stateInterface {
-  currentUser: never[];
-  usersList: never[];
-  idCurrentCompanion: number;
-  dialogId: number;
-}
-
+// redux hooks
 export type RootState = ReturnType<typeof store.getState>;
-export const useAppSelector = () => useSelector<RootState>((state) => state);
+export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
 
 export type AppDispatch = typeof store.dispatch;
-export const useAppDispatch = () => useDispatch<AppDispatch>();
+export const useAppDispatch: () => AppDispatch = useDispatch;
 
 export default store;

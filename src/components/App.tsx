@@ -1,39 +1,37 @@
 // react
-import { Dispatch, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 // components
 import Chat from "./Chat/Chat";
 import Sidebar from "./Sidebar/Sidebar";
 
 // auth
-import { User, useAuth0 } from "@auth0/auth0-react";
+import { useAuth0 } from "@auth0/auth0-react";
 
 // types
-import { DialogIdType, UserResponse } from "../types";
+import { UserResponse } from "../types";
 
 // socket.io
 import { socket } from "../services/context-socket-io";
 
 // redux
-import { connect, useDispatch, useSelector } from "react-redux";
-import {
-  // getUsers,
-  currentUser,
-  getUsers,
-  usersList,
-} from "../store/reducers/rootReducers";
-import { useAppSelector, useAppDispatch, AppDispatch } from "../store/store";
+import { currentUser } from "../store/rootReducers";
+import { getUsers } from "../store/thunks";
+import { useAppDispatch, useAppSelector } from "../store/store";
 
 // images
 import loaderImage from "../assets/icons/Spinner-1s-200px.gif";
+import { userListSelectors } from "../store/selectors";
 
-function App() {
+export default function App() {
+  const [connectedDB, setConnectedDB] = useState(false);
+
   const { isLoading, user, isAuthenticated } = useAuth0();
 
-  const userListStore = useAppSelector();
   const dispatch = useAppDispatch();
+  const userList = useAppSelector(userListSelectors);
 
-  socket.on("connect_error", (err) => {
+  const connection = socket.on("connect_error", (err) => {
     console.log(`connect_error due to ${err.message}`);
   });
 
@@ -45,15 +43,19 @@ function App() {
       searchUserName: user && user.email,
     };
 
+    // sending a search request for the current registered user
     socket.emit("findUsers", userName);
 
+    // asynchronous receipt of users from the store
     user && dispatch(getUsers(user));
 
     // eslint-disable-next-line
   }, [user, isAuthenticated]);
 
+  // getting the currently registered user
   socket.on("respFoundUsers", (foundUser) => {
     foundUser.forEach((el: UserResponse) => {
+      if (Object.keys(userList).length !== 0) return;
       if (el.email === (user && user.email)) {
         dispatch(currentUser(el));
       }
@@ -69,9 +71,13 @@ function App() {
     if (!isAuthenticated && user && Object.keys(user).length !== 0) return;
 
     socket.emit("createUsers", user && { ...user, session: false });
-
     // eslint-disable-next-line
   }, [user]);
+
+  useEffect(() => {
+    if (!connection.connected) setConnectedDB(true);
+    // eslint-disable-next-line
+  }, [connection]);
 
   if (isLoading) {
     setTimeout(() => {
@@ -87,18 +93,22 @@ function App() {
 
   return (
     <div id="snippetContent">
-      <div className="container">
-        <div className="row clearfix">
+      <div>
+        <div className="clearfix">
           <div className="col-lg-12">
-            <div className="card chat-app">
-              <Sidebar />
-              <Chat />
-            </div>
+            {!connectedDB ? (
+              <h2>Проблемы с подключением к БД</h2>
+            ) : (
+              <div className="card chat-app">
+                <>
+                  <Sidebar />
+                  <Chat />
+                </>
+              </div>
+            )}
           </div>
         </div>
       </div>
     </div>
   );
 }
-
-export default connect()(App);

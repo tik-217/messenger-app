@@ -1,47 +1,41 @@
 // react
-import React, { Dispatch, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 // types
-import { DialogIdType, UserResponse } from "../../types";
+import { UserResponse } from "../../types";
 
 // auth
 import { useAuth0 } from "@auth0/auth0-react";
 
-// redux
-import { connect } from "react-redux";
-
 // socket.io
 import { socket } from "../../services/context-socket-io";
-import { writingToLocalStorage } from "../../services/services";
+
+// redux
+import { useAppDispatch, useAppSelector } from "../../store/store";
 import {
   currentUser,
   dialogId,
   idCurrentCompanion,
-} from "../../store/reducers/rootReducers";
-import { useAppDispatch, useAppSelector } from "../../store/store";
+} from "../../store/rootReducers";
+import {
+  currentUserSelectors,
+  idCurrCompanSelecltor,
+  userListSelectors,
+} from "../../store/selectors";
 
-function Search() {
+export default function Search() {
   const [searchText, setSearchText] = useState<string>();
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [searchResponse, setSearchResponse] = useState<Array<UserResponse>>([]);
 
   const { user, isAuthenticated } = useAuth0();
 
-  const userListStore: any = useAppSelector();
   const dispatch = useAppDispatch();
 
-  const currentUserData = userListStore.currentUser;
-  const usersListData = userListStore.usersList;
-  const idCurrentCompanionData = userListStore.idCurrentCompanion;
+  const userList = useAppSelector(userListSelectors);
+  const currentUserData = useAppSelector(currentUserSelectors);
+  const idCurrCompan = useAppSelector(idCurrCompanSelecltor);
 
-  /* 
-    Global user search system (output input search).
-
-    The id of the current user is passed to сurrentUser.
-
-    A filtered array is passed to SearchResponse excluding
-    the currently registered user.
-  */
   useEffect(() => {
     if (searchText === undefined || searchText === "") return;
 
@@ -65,26 +59,13 @@ function Search() {
     // eslint-disable-next-line
   }, [searchText]);
 
-  socket.once("searchTextOnline", (socket) => {
-    setSearchText(socket);
-  });
-
-  /* 
-    Chat initialization function that accepts the current user and the user found
-    in the search (input search).
-
-    In response, the function accepts the id of the created dialog on the
-    server side.
-  */
   useEffect(() => {
     if (openDialog === false) return;
 
-    if (!usersListData) return;
-
-    writingToLocalStorage(usersListData);
+    if (!userList) return;
 
     const userIds = {
-      user_ids: [currentUserData.id, idCurrentCompanionData],
+      user_ids: [currentUserData.id, idCurrCompan],
     };
 
     socket.emit("createChat", userIds);
@@ -117,6 +98,10 @@ function Search() {
     setOpenDialog(true);
   }
 
+  socket.once("searchTextOnline", (socket) => {
+    setSearchText(socket);
+  });
+
   return (
     <>
       <div className="dropdown-content">
@@ -144,9 +129,3 @@ function Search() {
     </>
   );
 }
-
-function mapStateToProps(state) {
-  return {};
-}
-
-export default connect(mapStateToProps)(Search);

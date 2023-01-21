@@ -2,41 +2,36 @@
 import React, { useState, useEffect, useRef } from "react";
 
 // types
-import { ChatContent, ChatDialogReduxState, UserResponse } from "../../types";
+import { ChatContent } from "../../types";
 
 // redux
-import { connect } from "react-redux";
+import { useAppSelector } from "../../store/store";
+import { currentUserSelectors, userListSelectors } from "../../store/selectors";
 
 // utils
-import { changeTimeView } from "../../utils/utils";
+import { messageTimeView } from "../../services/services";
 
 // auth
 import { useAuth0 } from "@auth0/auth0-react";
 
 // socket.io
 import { socket } from "../../services/context-socket-io";
-import { useAppDispatch, useAppSelector } from "../../store/store";
 
-function ChatDialog({ dialogIdData }: { dialogIdData: number }) {
+export default function ChatDialog({ dialogIdData }: { dialogIdData: number }) {
   const [inputMessage, setInputMessage] = useState("");
   const [confirmRequest, setConfirmRequest] = useState(false);
   const [chatHistory, setChatHistory] = useState<Array<ChatContent>>([]);
 
   const { user } = useAuth0();
 
-  const userListStore: any = useAppSelector();
-  const dispatch = useAppDispatch();
-
-  const currentUserData = userListStore.currentUser;
-  const usersListData = userListStore.usersList;
+  const userList = useAppSelector(userListSelectors);
+  const currentUser = useAppSelector(currentUserSelectors);
 
   const messgagesList = useRef<null | HTMLUListElement>(null);
 
-  const scrollToBottom = () => {
+  function scrollToBottom() {
     messgagesList.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  };
-
-  scrollToBottom();
+  }
 
   function cancelingDefaultAction(e: React.KeyboardEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -51,12 +46,10 @@ function ChatDialog({ dialogIdData }: { dialogIdData: number }) {
   useEffect(() => scrollToBottom(), [chatHistory]);
 
   useEffect(() => {
-    scrollToBottom();
-
     if (confirmRequest === false) return;
 
     const chatContentData = {
-      user_id: currentUserData.id,
+      user_id: currentUser.id,
       chat_id: dialogIdData,
       content: inputMessage,
     };
@@ -66,10 +59,6 @@ function ChatDialog({ dialogIdData }: { dialogIdData: number }) {
     setConfirmRequest(false);
     // eslint-disable-next-line
   }, [confirmRequest]);
-
-  socket.on("createChatContent", (socket) => {
-    setChatHistory(socket);
-  });
 
   useEffect(() => {
     const getDialogData = async () => {
@@ -84,6 +73,10 @@ function ChatDialog({ dialogIdData }: { dialogIdData: number }) {
     getDialogData();
   }, [dialogIdData]);
 
+  socket.on("createChatContent", (socket) => {
+    setChatHistory(socket);
+  });
+
   return (
     <>
       <div className="chat-history">
@@ -91,11 +84,11 @@ function ChatDialog({ dialogIdData }: { dialogIdData: number }) {
           {chatHistory &&
             chatHistory.map((el: ChatContent) => (
               <React.Fragment key={el.id}>
-                {el.user_id !== usersListData[0].id ? (
+                {el.user_id !== userList[0].id ? (
                   <li className="clearfix">
                     <div className="message-data text-right">
                       <span className="message-data-time">
-                        {changeTimeView(el.createdAt)}
+                        {messageTimeView(el.createdAt)}
                       </span>
                       <img src={user?.picture} alt="avatar" />
                     </div>
@@ -107,7 +100,7 @@ function ChatDialog({ dialogIdData }: { dialogIdData: number }) {
                   <li className="clearfix">
                     <div className="message-data">
                       <span className="message-data-time">
-                        {changeTimeView(el.createdAt)}
+                        {messageTimeView(el.createdAt)}
                       </span>
                     </div>
                     <div className="message my-message">{el.content}</div>
@@ -138,13 +131,3 @@ function ChatDialog({ dialogIdData }: { dialogIdData: number }) {
     </>
   );
 }
-
-// function mapStateToProps(state: ChatDialogReduxState) {
-function mapStateToProps(state) {
-  return {
-    currentUser: state.allReducers,
-    usersList: state.allReducers,
-  };
-}
-
-export default connect(mapStateToProps)(ChatDialog);

@@ -15,14 +15,3 @@ export function getCompanionId(
   }
   setOpenDialog(true);
 }
-
-export function changeTimeView(createdAt: string) {
-  const date = new Date(createdAt);
-
-  const dateString = `${date.getHours()}:${date.getMinutes()}, ${date.toLocaleString(
-    "en-us",
-    { weekday: "long" }
-  )}`;
-
-  return dateString;
-}

@@ -3,6 +3,8 @@ import { UserResponse } from "../types";
 
 // auth
 import { User } from "@auth0/auth0-react";
+
+// socket.io
 import { socket } from "./context-socket-io";
 
 export const searchUser = async (
@@ -25,25 +27,13 @@ export const searchUser = async (
   });
 };
 
-export function createTime(timeString: string) {
-  if (timeString) {
-    const date = timeString && new Date(timeString);
-    const time = date && date.toLocaleTimeString().slice(0, 5);
+export function messageTimeView(createdAt: string) {
+  const date = new Date(createdAt);
 
-    return (
-      <>
-        <i className="fa fa-circle offline"></i> offline since {time}
-      </>
-    );
-  } else {
-    return (
-      <>
-        <i className="fa fa-circle online"></i> online
-      </>
-    );
-  }
-}
+  const dateString = `${date.getHours()}:${date.getMinutes()}, ${date.toLocaleString(
+    "en-us",
+    { weekday: "long" }
+  )}`;
 
-export function writingToLocalStorage(dialogData) {
-  localStorage.setItem("lastОpenDialog", JSON.stringify(dialogData));
+  return dateString;
 }
