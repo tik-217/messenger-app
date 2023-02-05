@@ -35,7 +35,6 @@ export default function App() {
     console.log(`connect_error due to ${err.message}`);
   });
 
-  // Get users list
   useEffect(() => {
     if (!isAuthenticated && !user) return;
 
@@ -43,18 +42,17 @@ export default function App() {
       searchUserName: user && user.email,
     };
 
-    // sending a search request for the current registered user
+    // set currentUser
     socket.emit("findUsers", userName);
 
-    // asynchronous receipt of users from the store
+    // set userList
     user && dispatch(getUsers(user));
 
     // eslint-disable-next-line
   }, [user, isAuthenticated]);
 
-  // getting the currently registered user
-  socket.on("respFoundUsers", (foundUser) => {
-    foundUser.forEach((el: UserResponse) => {
+  socket.on("respFoundUsers", async (foundUser) => {
+    await foundUser.forEach((el: UserResponse) => {
       if (Object.keys(userList).length !== 0) return;
       if (el.email === (user && user.email)) {
         dispatch(currentUser(el));
@@ -62,11 +60,6 @@ export default function App() {
     });
   });
 
-  /*
-    Creating a user based on the information received from the registration form.
-
-    The user must be registered and the user variable must not be empty.
-  */
   useEffect(() => {
     if (!isAuthenticated && user && Object.keys(user).length !== 0) return;
 
@@ -75,7 +68,8 @@ export default function App() {
   }, [user]);
 
   useEffect(() => {
-    if (!connection.connected) setConnectedDB(true);
+    if (connection.connected) setConnectedDB(true);
+
     // eslint-disable-next-line
   }, [connection]);
 
@@ -96,7 +90,7 @@ export default function App() {
       <div>
         <div className="clearfix">
           <div className="col-lg-12">
-            {!connectedDB ? (
+            {connectedDB ? (
               <h2>Проблемы с подключением к БД</h2>
             ) : (
               <div className="card chat-app">

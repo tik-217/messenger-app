@@ -6,7 +6,11 @@ import { ChatContent } from "../../types";
 
 // redux
 import { useAppSelector } from "../../store/store";
-import { currentUserSelectors, userListSelectors } from "../../store/selectors";
+import {
+  currentUserSelectors,
+  userListSelectors,
+  dialogIdSelectors,
+} from "../../store/selectors";
 
 // utils
 import { messageTimeView } from "../../services/services";
@@ -17,7 +21,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 // socket.io
 import { socket } from "../../services/context-socket-io";
 
-export default function ChatDialog({ dialogIdData }: { dialogIdData: number }) {
+export default React.memo(function ChatDialog() {
   const [inputMessage, setInputMessage] = useState("");
   const [confirmRequest, setConfirmRequest] = useState(false);
   const [chatHistory, setChatHistory] = useState<Array<ChatContent>>([]);
@@ -25,6 +29,7 @@ export default function ChatDialog({ dialogIdData }: { dialogIdData: number }) {
   const { user } = useAuth0();
 
   const userList = useAppSelector(userListSelectors);
+  const dialogId = useAppSelector(dialogIdSelectors);
   const currentUser = useAppSelector(currentUserSelectors);
 
   const messgagesList = useRef<null | HTMLUListElement>(null);
@@ -50,7 +55,7 @@ export default function ChatDialog({ dialogIdData }: { dialogIdData: number }) {
 
     const chatContentData = {
       user_id: currentUser.id,
-      chat_id: dialogIdData,
+      chat_id: dialogId,
       content: inputMessage,
     };
 
@@ -62,7 +67,7 @@ export default function ChatDialog({ dialogIdData }: { dialogIdData: number }) {
 
   useEffect(() => {
     const getDialogData = async () => {
-      if (dialogIdData === undefined || dialogIdData === null) return;
+      if (dialogId === undefined || dialogId === null) return;
 
       socket.emit("findChatContent");
 
@@ -71,11 +76,14 @@ export default function ChatDialog({ dialogIdData }: { dialogIdData: number }) {
       });
     };
     getDialogData();
-  }, [dialogIdData]);
+  }, [dialogId]);
 
-  socket.on("createChatContent", (socket) => {
-    setChatHistory(socket);
-  });
+  // experiment with useeffect
+  useEffect(() => {
+    socket.once("createChatContent", (socket) => {
+      setChatHistory(socket);
+    });
+  }, []);
 
   return (
     <>
@@ -130,4 +138,4 @@ export default function ChatDialog({ dialogIdData }: { dialogIdData: number }) {
       </div>
     </>
   );
-}
+});

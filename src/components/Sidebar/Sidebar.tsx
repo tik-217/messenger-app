@@ -28,7 +28,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 export default function Sidebar() {
   const [openDialog, setOpenDialog] = useState(false);
 
-  const { user } = useAuth0();
+  const { user, isAuthenticated } = useAuth0();
 
   const dispatch = useAppDispatch();
 
@@ -60,9 +60,9 @@ export default function Sidebar() {
     setOpenDialog(true);
   }
 
-  socket.once("updateUsers", (newUsersList) => {
+  socket.once("updateUsers", async (newUsersList) => {
     const listUsersWithoutCurrent =
-      newUsersList &&
+      (await newUsersList) &&
       newUsersList.filter(
         (el: UserResponse) => el.email !== (user && user.email) && el
       );
@@ -70,8 +70,8 @@ export default function Sidebar() {
     dispatch(usersList(listUsersWithoutCurrent));
   });
 
-  socket.on("respCreateChat", (socket) => {
-    dispatch(dialogId(socket));
+  socket.on("respCreateChat", async (socket) => {
+    dispatch(dialogId(await socket));
   });
 
   return (
@@ -80,7 +80,8 @@ export default function Sidebar() {
         <Search />
       </div>
       <ul className="list-unstyled chat-list mt-2 mb-0">
-        {userList &&
+        {isAuthenticated &&
+          userList &&
           userList.map((el: UserResponse) => (
             <li
               className="clearfix d-flex align-items-center"

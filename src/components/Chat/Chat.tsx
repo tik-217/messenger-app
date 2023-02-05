@@ -15,9 +15,6 @@ import {
   idCurrCompanSelecltor,
 } from "../../store/selectors";
 
-// types
-import { UserResponse } from "../../types";
-
 // socket.io
 import { socket } from "../../services/context-socket-io";
 
@@ -25,12 +22,9 @@ import { socket } from "../../services/context-socket-io";
 import CreateTime from "../CreateTime/CreateTime";
 
 export default function Chat() {
-  const [companionData, setCompanionData] = useState<UserResponse[]>([]);
-
   const { loginWithRedirect, logout, isAuthenticated } = useAuth0();
 
   const currentUserData = useAppSelector(currentUserSelectors);
-  const idCurrCompan = useAppSelector(idCurrCompanSelecltor);
   const dialogId = useAppSelector(dialogIdSelectors);
 
   useEffect(() => {
@@ -52,17 +46,6 @@ export default function Chat() {
       socket.emit("updateUsers", currentUserData.id, sessionDate);
     });
   }, [currentUserData]);
-
-  useEffect(() => {
-    if (!idCurrCompan) return;
-
-    socket.emit("findUsers", Number(idCurrCompan));
-  }, [idCurrCompan]);
-
-  socket.on("respFoundUsers", (foundUsers) => {
-    setCompanionData(foundUsers);
-    console.log(foundUsers[0].picture);
-  });
 
   return (
     <div className="chat">
@@ -95,22 +78,14 @@ export default function Chat() {
           <div className="chat-header clearfix">
             <div className="">
               <div className="col-lg-6">
-                <img
-                  src={
-                    companionData.length !== 0 ? companionData[0].picture : "/"
-                  }
-                  alt="avatar"
-                />
+                <img src={currentUserData.picture ?? "/"} alt="avatar" />
                 <div className="chat-about">
-                  <h6 className="m-b-0">
-                    {companionData.length !== 0 && companionData[0].name}
-                  </h6>
+                  <h6 className="m-b-0">{currentUserData.name}</h6>
                   <small>
                     <CreateTime
                       timeString={
-                        companionData.length !== 0 &&
-                        companionData[0].session === false
-                          ? String(companionData[0].updatedAt)
+                        currentUserData.session === false
+                          ? String(currentUserData.updatedAt)
                           : false
                       }
                     />
@@ -130,7 +105,7 @@ export default function Chat() {
               </div>
             </div>
           </div>
-          <ChatDialog dialogIdData={dialogId} />
+          <ChatDialog />
         </>
       )}
     </div>
